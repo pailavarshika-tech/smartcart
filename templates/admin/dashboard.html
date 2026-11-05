@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+
+<h2>Welcome, {{ admin_name }}</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <p>{{ message }}</p>
+    {% endfor %}
+{% endwith %}
+
+<p>This is your SmartCart admin dashboard.</p>
+
+<a href="/admin/add-item">Add Product</a>
+<br><br>
+
+<a href="/admin/item-list">View All Products</a>
+<br><br>
+
+<a href="/admin-logout">Logout</a>
+<br><br>
+
+<a href="/admin/profile">view profile</a>
+
+</body>
+</html>

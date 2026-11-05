@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Success</title>
+</head>
+<body>
+
+<h2 style="color:green;">Payment Successful! Order Placed.</h2>
+<a href="{{ url_for('download_invoice', order_id=order.database_order_id) }}"
+   class="btn btn-primary">
+    Download Invoice PDF
+</a>
+
+<p>Payment ID: {{ order.payment_id }}</p>
+<p>Order ID: {{ order.order_id }}</p>
+
+<h3>Delivery Details</h3>
+
+<p>Name: {{ order.name }}</p>
+<p>Email: {{ order.email }}</p>
+<p>Phone: {{ order.phone }}</p>
+<p>Door No: {{ order.door_no }}</p>
+<p>Address: {{ order.address }}</p>
+<p>City: {{ order.city }}</p>
+<p>State: {{ order.state }}</p>
+<p>Pincode: {{ order.pincode }}</p>
+
+<hr>
+
+<h3>Ordered Products</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Total</th>
+    </tr>
+
+    {% for item in order['items'] %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>₹{{ "%.2f"|format(item.price) }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>₹{{ "%.2f"|format(item.total) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Grand Total: ₹{{ "%.2f"|format(order.total) }}</h3>
+
+<br>
+
+<a href="/user/products">Continue Shopping</a>
+
+</body>
+</html>

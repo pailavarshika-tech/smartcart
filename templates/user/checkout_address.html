@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delivery Address - SmartCart</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f7f8fa;margin:30px;color:#222}
+.container{max-width:850px;margin:auto;background:white;padding:24px;border-radius:10px}
+input,textarea{width:100%;padding:10px;margin:6px 0 14px;box-sizing:border-box;border:1px solid #ccc;border-radius:5px}
+button,a{padding:10px 16px;border:0;border-radius:5px;text-decoration:none;cursor:pointer}
+button{background:#0878e8;color:white}.back{background:#e9ecef;color:#222}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.flash{color:#b42318}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="container">
+<h2>Delivery Address</h2>
+<p>Products selected: {{ selected_items|length }} | Selected total: <strong>₹{{ "%.2f"|format(selected_total) }}</strong></p>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}<p class="flash">{{ message }}</p>{% endfor %}
+{% endwith %}
+<form method="POST" action="/user/save-address">
+<label>Full Name</label>
+<input name="full_name" required value="{{ form_data.get('full_name','') if form_data else user_name }}" placeholder="Enter your full name">
+<div class="grid">
+<div><label>Phone Number</label><input name="phone" type="tel" required pattern="[0-9]{10}" maxlength="10" value="{{ form_data.get('phone','') if form_data else '' }}" placeholder="10-digit mobile number"></div>
+<div><label>PIN Code</label><input name="pincode" inputmode="numeric" required pattern="[0-9]{6}" maxlength="6" value="{{ form_data.get('pincode','') if form_data else '' }}" placeholder="6-digit PIN code"></div>
+</div>
+<label>House No. / Street / Full Address</label>
+<textarea name="address" rows="3" required placeholder="Enter your complete address">{{ form_data.get('address','') if form_data else '' }}</textarea>
+<div class="grid">
+<div><label>City</label><input name="city" required value="{{ form_data.get('city','') if form_data else '' }}" placeholder="City"></div>
+<div><label>State</label><input name="state" required value="{{ form_data.get('state','') if form_data else '' }}" placeholder="State"></div>
+</div>
+<a class="back" href="/user/cart">Back to Cart</a>
+<button type="submit">Save and Continue</button>
+</form>
+</div></body></html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Cart</title>
+</head>
+<body>
+
+<h2>Your Cart</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <p style="color:{{ 'green' if category == 'success' else 'red' }};">{{ message }}</p>
+    {% endfor %}
+{% endwith %}
+
+{% if not cart %}
+
+    <p>Your cart is empty.</p>
+    <a href="/user/products">Shop Now</a>
+
+{% else %}
+
+<form action="{{ url_for('checkout') }}" method="POST" onsubmit="return checkSelection()">
+
+<table border="1" cellpadding="10">
+
+    <tr>
+        <th><input type="checkbox" id="selectAll" onchange="toggleAll(this)"> All</th>
+        <th>Image</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Total</th>
+        <th>Action</th>
+    </tr>
+
+    {% for pid, item in cart.items() %}
+    <tr>
+        <td>
+            <input type="checkbox"
+                   name="selected_products"
+                   value="{{ pid }}"
+                   class="product-checkbox"
+                   data-price="{{ item.price }}"
+                   data-quantity="{{ item.quantity }}"
+                   onchange="calculateTotal()"
+                   style="width:20px;height:20px;">
+        </td>
+
+        <td>
+            <img src="/static/uploads/product_images/{{ item.image }}" width="80">
+        </td>
+
+        <td>{{ item.name }}</td>
+
+        <td>₹{{ "%.2f"|format(item.price) }}</td>
+
+        <td>
+            <a href="/user/cart/decrease/{{ pid }}">-</a>
+            {{ item.quantity }}
+            <a href="/user/cart/increase/{{ pid }}">+</a>
+        </td>
+
+        <td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td>
+
+        <td>
+            <a href="/user/cart/remove/{{ pid }}">Remove</a>
+        </td>
+    </tr>
+    {% endfor %}
+
+</table>
+
+<br>
+
+<h3>Selected Products Total: ₹<span id="selectedTotal">0.00</span></h3>
+
+<p>Complete Cart Total: ₹{{ "%.2f"|format(grand_total) }}</p>
+
+<button type="submit" id="proceedBtn" disabled>Proceed</button>
+
+</form>
+
+<br>
+<a href="/user/products">Continue Shopping</a>
+
+{% endif %}
+
+<script>
+// remember which boxes are ticked (so + / - / reload doesn't clear them)
+function saveTicks() {
+    try {
+        var ticked = [];
+        document.querySelectorAll('.product-checkbox').forEach(function (b) {
+            if (b.checked) ticked.push(b.value);
+        });
+        sessionStorage.setItem('ticked', JSON.stringify(ticked));
+    } catch (e) {}
+}
+
+function calculateTotal() {
+    var total = 0;
+    var boxes = document.querySelectorAll('.product-checkbox');
+    var anyChecked = false;
+    var allChecked = boxes.length > 0;
+
+    boxes.forEach(function (box) {
+        if (box.checked) {
+            anyChecked = true;
+            total += parseFloat(box.dataset.price) * parseInt(box.dataset.quantity);
+        } else {
+            allChecked = false;
+        }
+    });
+
+    var totalEl = document.getElementById('selectedTotal');
+    if (totalEl) totalEl.innerText = total.toFixed(2);
+
+    var btn = document.getElementById('proceedBtn');
+    if (btn) btn.disabled = !anyChecked;
+
+    var all = document.getElementById('selectAll');
+    if (all) all.checked = allChecked;
+
+    saveTicks();
+}
+
+function toggleAll(master) {
+    document.querySelectorAll('.product-checkbox').forEach(function (b) {
+        b.checked = master.checked;
+    });
+    calculateTotal();
+}
+
+function checkSelection() {
+    if (!document.querySelector('.product-checkbox:checked')) {
+        alert('Please tick at least one product!');
+        return false;
+    }
+    return true;
+}
+
+// restore ticks on page load
+(function () {
+    try {
+        var ticked = JSON.parse(sessionStorage.getItem('ticked') || '[]');
+        document.querySelectorAll('.product-checkbox').forEach(function (b) {
+            if (ticked.indexOf(b.value) !== -1) b.checked = true;
+        });
+    } catch (e) {}
+    calculateTotal();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment</title>
+</head>
+<body>
+
+<h2>Complete Your Payment</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <p style="color:red;">{{ message }}</p>
+    {% endfor %}
+{% endwith %}
+
+<h3>Order Summary</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Total</th>
+    </tr>
+
+    {% for item in items %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>₹{{ "%.2f"|format(item.price) }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>₹{{ "%.2f"|format(item.total) }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>Total Amount: ₹{{ "%.2f"|format(total) }}</h3>
+
+<h3>Delivering To</h3>
+<p>
+    {{ delivery.full_name }} ({{ delivery.phone }})<br>
+    {{ delivery.address }}<br>
+    {{ delivery.city }}, {{ delivery.state }} - {{ delivery.pincode }}<br>
+    {{ delivery.email }}
+</p>
+
+<button id="rzp-button">Pay Now</button>
+<a href="/user/cart">Back to cart</a>
+
+<!-- Hidden form: sends payment result to Flask for verification -->
+<form id="verifyForm" action="/payment-success" method="POST">
+    <input type="hidden" name="razorpay_payment_id" id="f_payment_id">
+    <input type="hidden" name="razorpay_order_id" id="f_order_id">
+    <input type="hidden" name="razorpay_signature" id="f_signature">
+</form>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+var options = {
+    "key": {{ key_id|tojson }},
+    "amount": {{ amount_paise }},
+    "currency": "INR",
+    "name": "SmartCart",
+    "description": "Order Payment",
+    "order_id": {{ order_id|tojson }},
+    "prefill": {
+        "name": {{ delivery.full_name|tojson }},
+        "email": {{ delivery.email|tojson }},
+        "contact": {{ delivery.phone|tojson }}
+    },
+    "handler": function (response) {
+        document.getElementById('f_payment_id').value = response.razorpay_payment_id;
+        document.getElementById('f_order_id').value = response.razorpay_order_id;
+        document.getElementById('f_signature').value = response.razorpay_signature;
+        document.getElementById('verifyForm').submit();
+    }
+};
+
+var rzp = new Razorpay(options);
+
+rzp.on('payment.failed', function (response) {
+    alert('Payment failed: ' + response.error.description);
+});
+
+document.getElementById('rzp-button').onclick = function (e) {
+    rzp.open();
+    e.preventDefault();
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartCart Invoice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2874f0;
+        }
+
+        .details {
+            margin-top: 25px;
+            line-height: 1.8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #2874f0;
+            color: white;
+        }
+
+        .total {
+            text-align: right;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>SmartCart</h1>
+    <h3 style="text-align:center;">Order Invoice</h3>
+
+    <div class="details">
+        <p><b>Order ID:</b> {{ order.order_id }}</p>
+        <p><b>Order Date:</b> {{ order.created_at }}</p>
+        <p><b>Customer Name:</b> {{ order.name }}</p>
+        <p><b>Email:</b> {{ order.email }}</p>
+        <p><b>Phone:</b> {{ order.phone }}</p>
+        <p><b>Address:</b> {{ order.address }}, {{ order.city }}, {{ order.pincode }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+
+        <tbody>
+           {% for item in order['items'] %}
+            <tr>
+                <td>{{ item['product_name'] }}</td>
+                <td>₹{{ item.price }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ item.price * item.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total">
+        Grand Total: ₹{{ order.amount }}
+    </div>
+
+    <p style="text-align:center; margin-top:40px;">
+        Thank you for shopping with SmartCart!
+    </p>
+
+</body>
+</html>
