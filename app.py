@@ -1031,6 +1031,126 @@ def user_login():
         cursor.close()
         conn.close()
 
+
+# ---------------------------------------------------------
+# CUSTOMER FORGOT PASSWORD: SEND OTP TO REGISTERED USER EMAIL
+# ---------------------------------------------------------
+@app.route('/user-forgot-password', methods=['GET', 'POST'])
+def user_forgot_password():
+    if request.method == 'GET':
+        return render_template('user/forgot_password.html')
+
+    email = request.form.get('email', '').strip().lower()
+    if not email:
+        flash("Please enter your registered email.", "danger")
+        return redirect('/user-forgot-password')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT user_id FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Do not disclose whether an email address is registered.
+    if not user:
+        flash("If this email is registered, a reset OTP will be sent.", "info")
+        return redirect('/user-forgot-password')
+
+    otp = str(random.randint(100000, 999999))
+    session['user_reset_email'] = email
+    session['user_reset_otp'] = otp
+    session['user_reset_otp_created'] = __import__('time').time()
+
+    try:
+        message = Message(
+            subject="SmartCart Customer Password Reset OTP",
+            sender=config.MAIL_USERNAME,
+            recipients=[email]
+        )
+        message.body = (
+            f"Your SmartCart customer password reset OTP is {otp}. "
+            "It expires in 10 minutes. If you did not request this, ignore this email."
+        )
+        mail.send(message)
+    except Exception:
+        app.logger.exception("Could not send customer password reset OTP")
+        for key in ('user_reset_email', 'user_reset_otp', 'user_reset_otp_created'):
+            session.pop(key, None)
+        flash("Unable to send the reset OTP. Please check email settings and try again.", "danger")
+        return redirect('/user-forgot-password')
+
+    flash("If this email is registered, a reset OTP has been sent.", "success")
+    return redirect('/user-reset-password')
+
+
+# ---------------------------------------------------------
+# CUSTOMER RESET PASSWORD: VERIFY OTP AND SAVE NEW HASHED PASSWORD
+# ---------------------------------------------------------
+@app.route('/user-reset-password', methods=['GET', 'POST'])
+def user_reset_password():
+    if not session.get('user_reset_email') or not session.get('user_reset_otp'):
+        flash("Please request a password reset OTP first.", "danger")
+        return redirect('/user-forgot-password')
+
+    if request.method == 'GET':
+        return render_template('user/reset_password.html')
+
+    otp = request.form.get('otp', '').strip()
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+
+    created = session.get('user_reset_otp_created', 0)
+    if __import__('time').time() - created > 600:
+        for key in ('user_reset_email', 'user_reset_otp', 'user_reset_otp_created'):
+            session.pop(key, None)
+        flash("OTP expired. Please request a new one.", "danger")
+        return redirect('/user-forgot-password')
+
+    if otp != str(session.get('user_reset_otp')):
+        flash("Invalid OTP. Please try again.", "danger")
+        return redirect('/user-reset-password')
+
+    if len(new_password) < 8:
+        flash("Password must be at least 8 characters long.", "danger")
+        return redirect('/user-reset-password')
+
+    if new_password != confirm_password:
+        flash("Passwords do not match.", "danger")
+        return redirect('/user-reset-password')
+
+    hashed_password = bcrypt.hashpw(
+        new_password.encode('utf-8'), bcrypt.gensalt()
+    ).decode('utf-8')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET password = ? WHERE email = ?",
+            (hashed_password, session['user_reset_email'])
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            flash("Password reset failed. Please request a new OTP.", "danger")
+            return redirect('/user-forgot-password')
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+        app.logger.exception("User password reset database update failed")
+        flash("Unable to reset password right now. Please try again.", "danger")
+        return redirect('/user-reset-password')
+    finally:
+        cursor.close()
+        conn.close()
+
+    for key in ('user_reset_email', 'user_reset_otp', 'user_reset_otp_created'):
+        session.pop(key, None)
+    flash("Password reset successful. Please log in with your new password.", "success")
+    return redirect('/user-login')
+
 # ROUTE 3: User Dashboard (Protected)
 # =================================================================
 # ROUTE: USER DASHBOARD
