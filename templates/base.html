@@ -45,8 +45,14 @@
       --gradient-card: linear-gradient(135deg, #ffffff 0%, #faf8ff 100%);
     }
 
+    html {
+      overflow-x: hidden;
+      max-width: 100vw;
+      scroll-behavior: smooth;
+    }
     body {
       margin: 0;
+      padding: 0;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--ink);
@@ -54,18 +60,30 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow-x: hidden;
+      max-width: 100vw;
+      width: 100%;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
     }
 
-    /* Modern Navbar */
+    /* Modern Responsive Navbar */
     .navbar {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--line-purple);
       padding: 12px 5%;
       position: sticky;
       top: 0;
       z-index: 1000;
       box-shadow: 0 4px 20px -2px rgba(109, 40, 217, 0.07);
+      transition: all 0.3s ease;
     }
     .nav-container {
       max-width: 1200px;
@@ -74,7 +92,12 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      flex-wrap: wrap;
+      width: 100%;
+    }
+    .nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     .brand {
       display: inline-flex;
@@ -106,11 +129,88 @@
       -webkit-text-fill-color: transparent;
     }
 
+    /* Mobile header actions & toggle (Hidden on desktop) */
+    .nav-mobile-actions {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .mobile-cart-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      background: var(--primary-light);
+      border: 1px solid var(--line-purple);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      font-size: 17px;
+      color: var(--primary-dark);
+      box-shadow: var(--shadow-sm);
+    }
+    .mobile-cart-btn .cart-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      margin: 0;
+      font-size: 10px;
+      height: 18px;
+      min-width: 18px;
+    }
+
+    /* 3-Line Hamburger Menu Button (☰) */
+    .nav-toggle {
+      display: none;
+      background: #ffffff;
+      border: 1.5px solid var(--line-purple);
+      cursor: pointer;
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+      z-index: 1002;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-toggle:hover, .nav-toggle:focus {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      outline: none;
+    }
+    .hamburger-line {
+      display: block;
+      width: 20px;
+      height: 2.2px;
+      background: var(--primary-dark);
+      border-radius: 2px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: center;
+    }
+    /* Hamburger to 'X' animation when active */
+    .nav-toggle.active .line1 {
+      transform: translateY(7.2px) rotate(45deg);
+      background: var(--primary);
+    }
+    .nav-toggle.active .line2 {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    .nav-toggle.active .line3 {
+      transform: translateY(-7.2px) rotate(-45deg);
+      background: var(--primary);
+    }
+
     .nav-links {
       display: flex;
       gap: 8px;
       align-items: center;
-      flex-wrap: wrap;
     }
     .nav-link {
       color: var(--ink-light);
@@ -709,10 +809,10 @@
       gap: 0 20px;
     }
 
-    /* Product Cards */
+    /* Product Cards (4 columns on desktop by default) */
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 22px;
       margin-top: 24px;
     }
@@ -791,21 +891,278 @@
     }
     .footer strong { color: var(--primary); }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .navbar { padding: 12px 4%; }
-      .brand { font-size: 20px; }
-      .nav-links { gap: 6px; }
-      .nav-link { padding: 6px 10px; font-size: 13px; }
-      .page-container { width: 94%; margin: 20px auto 40px; }
-      .profile-hero { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
-      .hero-avatar-area { flex-direction: column; align-items: flex-start; gap: 14px; }
-      .hero-actions { width: 100%; }
-      .hero-btn { width: 100%; text-align: center; }
-      .form-grid { grid-template-columns: 1fr; }
-      .auth-card { padding: 24px 18px; }
-      .profile-card { padding: 22px 18px; }
-      .profile-header-area { flex-direction: column; text-align: center; }
+    /* =========================================================
+       COMPREHENSIVE RESPONSIVE DESIGN (DESKTOP, TABLET, MOBILE)
+       ========================================================= */
+
+    /* Large Desktop (>= 1080px): exactly 4 columns for product catalog */
+    @media (min-width: 1080px) {
+      .product-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 22px;
+      }
+    }
+
+    /* Medium Screens & Laptops (869px - 1079px): 3 columns */
+    @media (max-width: 1079px) and (min-width: 869px) {
+      .product-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 18px;
+      }
+      .page-container {
+        width: 94%;
+      }
+    }
+
+    /* Mobile & Tablet Breakpoint (<= 868px) */
+    @media (max-width: 868px) {
+      .navbar {
+        padding: 10px 4%;
+      }
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .nav-header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand {
+        font-size: 21px;
+      }
+      .brand-icon-wrap {
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+      }
+      .nav-mobile-actions {
+        display: flex !important;
+      }
+      .nav-toggle {
+        display: flex !important;
+      }
+
+      /* Collapsible Animated Mobile Dropdown Menu */
+      .nav-links {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-height: 0;
+        opacity: 0;
+        visibility: hidden;
+        overflow: hidden;
+        transform: translateY(-10px);
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.25s ease,
+                    transform 0.25s ease,
+                    visibility 0.25s ease;
+        background: #ffffff;
+        border-radius: var(--radius-lg);
+        padding: 0 16px;
+        margin-top: 0;
+        border: 1px solid transparent;
+        gap: 6px;
+        box-sizing: border-box;
+      }
+      .nav-links.open {
+        max-height: 560px;
+        opacity: 1;
+        visibility: visible;
+        overflow-y: auto;
+        transform: translateY(0);
+        padding: 14px;
+        margin-top: 10px;
+        border-color: var(--line-purple);
+        box-shadow: 0 12px 30px -4px rgba(109, 40, 217, 0.16);
+      }
+      .nav-links .nav-link,
+      .nav-links .nav-profile-pill,
+      .nav-links .btn {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 16px;
+        font-size: 14px;
+        border-radius: var(--radius-sm);
+        justify-content: flex-start;
+      }
+      .nav-links .btn {
+        justify-content: center;
+        text-align: center;
+      }
+      .nav-links .nav-profile-pill {
+        background: #faf8ff;
+        border: 1px solid var(--line-purple);
+        gap: 10px;
+      }
+      .nav-role-badge {
+        margin-left: auto;
+      }
+
+      /* Product cards: 2 columns on mobile/tablet (<= 868px) */
+      .product-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px;
+        margin-top: 18px;
+      }
+      .product-card {
+        padding: 12px;
+        border-radius: var(--radius-md);
+      }
+      .product-img-wrap {
+        height: 140px;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      .product-card h3 {
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+      .product-price {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .product-card .btn {
+        padding: 8px 10px;
+        font-size: 12.5px;
+        width: 100%;
+      }
+
+      /* Page container and general mobile card spacing */
+      .page-container {
+        width: 94%;
+        margin: 16px auto 36px;
+      }
+      .card {
+        padding: 20px 16px !important;
+        border-radius: var(--radius-lg);
+      }
+      .auth-wrapper {
+        margin: 16px auto 30px;
+        max-width: 100%;
+      }
+      .auth-card {
+        padding: 24px 18px !important;
+      }
+      .auth-header h2 {
+        font-size: 22px;
+      }
+      .auth-header p {
+        font-size: 13px;
+      }
+      .auth-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+        margin-bottom: 12px;
+      }
+      .profile-card {
+        padding: 20px 16px !important;
+      }
+      .profile-header-area {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+      }
+      .profile-hero {
+        padding: 20px 16px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+      }
+      .hero-avatar-area {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+      }
+      .hero-avatar, .hero-avatar-placeholder {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+      }
+      .hero-user-details h1 {
+        font-size: 22px;
+        margin-bottom: 4px;
+      }
+      .hero-badges {
+        justify-content: center;
+        gap: 6px;
+      }
+      .hero-actions {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .hero-btn, .hero-actions .btn {
+        width: 100%;
+        text-align: center;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .action-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+      .table-responsive {
+        margin: 10px 0;
+        -webkit-overflow-scrolling: touch;
+      }
+      th, td {
+        padding: 10px 8px;
+        font-size: 12.5px;
+      }
+      .search-filter-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .flash-container {
+        margin-bottom: 16px;
+      }
+      .flash-message {
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: var(--radius-sm);
+      }
+      .footer {
+        padding: 20px 14px;
+        font-size: 12.5px;
+      }
+    }
+
+    /* Narrow phones (<= 360px) */
+    @media (max-width: 360px) {
+      .product-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+      }
+      .product-img-wrap {
+        height: 160px;
+      }
+      .brand {
+        font-size: 19px;
+      }
+      .card {
+        padding: 16px 12px !important;
+      }
+      .auth-card {
+        padding: 20px 14px !important;
+      }
+      .profile-card {
+        padding: 16px 12px !important;
+      }
     }
   </style>
   {% block head %}{% endblock %}
@@ -815,12 +1172,30 @@
 <!-- Navigation Bar -->
 <nav class="navbar">
   <div class="nav-container">
-    <a class="brand" href="{% if session.get('admin_id') %}/admin-dashboard{% elif session.get('user_id') %}/user-dashboard{% else %}/{% endif %}">
-      <div class="brand-icon-wrap">🛍️</div>
-      <div class="brand-text">Smart<span>Cart</span></div>
-    </a>
+    <div class="nav-header">
+      <a class="brand" href="{% if session.get('admin_id') %}/admin-dashboard{% elif session.get('user_id') %}/user-dashboard{% else %}/{% endif %}">
+        <div class="brand-icon-wrap">🛍️</div>
+        <div class="brand-text">Smart<span>Cart</span></div>
+      </a>
 
-    <div class="nav-links">
+      <div class="nav-mobile-actions">
+        {% if session.get('user_id') %}
+          <a href="/user/cart" class="mobile-cart-btn" aria-label="Shopping Cart">
+            <span>🛒</span>
+            <span class="cart-badge">{{ cart_count|default(0) }}</span>
+          </a>
+        {% endif %}
+
+        <!-- 3-line animated hamburger menu button (☰) -->
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span class="hamburger-line line1"></span>
+          <span class="hamburger-line line2"></span>
+          <span class="hamburger-line line3"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="nav-links" id="navLinks">
       {% if session.get('admin_id') %}
         <a href="/admin-dashboard" class="nav-link"><span style="font-size:15px">📊</span> Dashboard</a>
         <a href="/admin/add-item" class="nav-link"><span style="font-size:15px">➕</span> Add Product</a>
@@ -891,6 +1266,52 @@
   <div><strong>SmartCart</strong> · Premium Purple Responsive Experience</div>
   <div style="font-size:12px; margin-top:4px; opacity:0.8;">Secure Shopping · Direct Razorpay Payments · Fast Automated Invoices</div>
 </footer>
+
+<!-- Responsive Navigation Hamburger Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var navToggle = document.getElementById('navToggle');
+  var navLinks = document.getElementById('navLinks');
+
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var isOpen = navLinks.classList.toggle('open');
+      navToggle.classList.toggle('active', isOpen);
+      navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!navToggle.contains(e.target) && !navLinks.contains(e.target) && navLinks.classList.contains('open')) {
+        navLinks.classList.remove('open');
+        navToggle.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close when clicking any nav link on mobile
+    navLinks.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 868) {
+          navLinks.classList.remove('open');
+          navToggle.classList.remove('active');
+          navToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+
+    // Reset when resizing to desktop
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 868 && navLinks.classList.contains('open')) {
+        navLinks.classList.remove('open');
+        navToggle.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+});
+</script>
 
 {% block scripts %}{% endblock %}
 </body>

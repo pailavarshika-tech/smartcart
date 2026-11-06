@@ -115,6 +115,11 @@ def init_sqlite_db():
             FOREIGN KEY (order_id) REFERENCES orders(order_id),
             FOREIGN KEY (product_id) REFERENCES products(product_id)
         );
+
+        -- Safe backfill: Assign any legacy NULL admin_id products to the primary admin
+        UPDATE products
+        SET admin_id = (SELECT admin_id FROM admin ORDER BY admin_id ASC LIMIT 1)
+        WHERE admin_id IS NULL;
     """)
     conn.commit()
     conn.close()
@@ -343,16 +348,31 @@ def admin_dashboard():
         cursor.execute("SELECT * FROM admin WHERE admin_id = ?", (admin_id,))
         admin = cursor.fetchone()
 
-        cursor.execute("SELECT COUNT(*) AS total_products FROM products")
+        # Admin-wise product count
+        cursor.execute("SELECT COUNT(*) AS total_products FROM products WHERE admin_id = ?", (admin_id,))
         stats_prod = cursor.fetchone()
 
-        cursor.execute("SELECT COUNT(DISTINCT category) AS total_categories FROM products")
+        # Admin-wise active categories
+        cursor.execute("SELECT COUNT(DISTINCT category) AS total_categories FROM products WHERE admin_id = ?", (admin_id,))
         stats_cat = cursor.fetchone()
 
-        cursor.execute("SELECT COUNT(*) AS total_orders, COALESCE(SUM(amount), 0) AS total_revenue FROM orders")
+        # Admin-wise customer orders & sales revenue for this admin's products
+        cursor.execute("""
+            SELECT COUNT(DISTINCT oi.order_id) AS total_orders,
+                   COALESCE(SUM(oi.price * oi.quantity), 0) AS total_revenue
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.product_id
+            WHERE p.admin_id = ?
+        """, (admin_id,))
         stats_orders = cursor.fetchone()
 
-        cursor.execute("SELECT * FROM products ORDER BY product_id DESC LIMIT 6")
+        # Admin-wise recent products
+        cursor.execute("""
+            SELECT * FROM products
+            WHERE admin_id = ?
+            ORDER BY product_id DESC
+            LIMIT 6
+        """, (admin_id,))
         recent_products = cursor.fetchall()
 
         stats = {
@@ -463,19 +483,20 @@ def item_list():
         flash("Please login!", "danger")
         return redirect('/admin-login')
 
-    search = request.args.get('search', '')
-    category_filter = request.args.get('category', '')
+    admin_id = session['admin_id']
+    search = request.args.get('search', '').strip()
+    category_filter = request.args.get('category', '').strip()
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # 1️⃣ Fetch category list for dropdown
-    cursor.execute("SELECT DISTINCT category FROM products")
+    # 1️⃣ Fetch category list for dropdown strictly from this admin's products
+    cursor.execute("SELECT DISTINCT category FROM products WHERE admin_id = ?", (admin_id,))
     categories = cursor.fetchall()
 
-    # 2️⃣ Build dynamic query based on filters
-    query = "SELECT * FROM products WHERE 1=1"
-    params = []
+    # 2️⃣ Build dynamic query strictly filtered by admin_id
+    query = "SELECT * FROM products WHERE admin_id = ?"
+    params = [admin_id]
 
     if search:
         query += " AND name LIKE ?"
@@ -484,6 +505,8 @@ def item_list():
     if category_filter:
         query += " AND category = ?"
         params.append(category_filter)
+
+    query += " ORDER BY product_id DESC"
 
     cursor.execute(query, params)
     products = cursor.fetchall()
@@ -498,7 +521,7 @@ def item_list():
     )
 
 # =================================================================
-#  route-13 DELETE PRODUCT (DELETE DB ROW + DELETE IMAGE FILE)
+#  ROUTE: DELETE PRODUCT (VALIDATES ADMIN OWNERSHIP)
 # =================================================================
 @app.route('/admin/delete-item/<int:item_id>')
 def delete_item(item_id):
@@ -507,26 +530,33 @@ def delete_item(item_id):
         flash("Please login first!", "danger")
         return redirect('/admin-login')
 
+    admin_id = session['admin_id']
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # 1️⃣ Fetch product to get image name
-    cursor.execute("SELECT image FROM products WHERE product_id = ?", (item_id,))
+    # 1️⃣ Verify product exists AND belongs to the logged-in admin
+    cursor.execute("SELECT image FROM products WHERE product_id = ? AND admin_id = ?", (item_id, admin_id))
     product = cursor.fetchone()
 
     if not product:
-        flash("Product not found!", "danger")
+        cursor.close()
+        conn.close()
+        flash("Product not found or access denied!", "danger")
         return redirect('/admin/item-list')
 
     image_name = product['image']
 
-    # Delete image from folder
-    image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
-    if os.path.exists(image_path):
-        os.remove(image_path)
+    # Delete image from folder if exists
+    if image_name:
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_name)
+        if os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+            except OSError:
+                pass
 
-    # 2️⃣ Delete product from DB
-    cursor.execute("DELETE FROM products WHERE product_id = ?", (item_id,))
+    # 2️⃣ Delete product from DB strictly with admin_id check
+    cursor.execute("DELETE FROM products WHERE product_id = ? AND admin_id = ?", (item_id, admin_id))
     conn.commit()
 
     cursor.close()
@@ -537,7 +567,7 @@ def delete_item(item_id):
 
 
 #=================================================================
-# ROUTE 10: VIEW SINGLE PRODUCT DETAILS
+# ROUTE 10: VIEW SINGLE PRODUCT DETAILS (VALIDATES ADMIN OWNERSHIP)
 # =================================================================
 @app.route('/admin/view-item/<int:item_id>')
 def view_item(item_id):
@@ -547,24 +577,25 @@ def view_item(item_id):
         flash("Please login first!", "danger")
         return redirect('/admin-login')
 
+    admin_id = session['admin_id']
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM products WHERE product_id = ?", (item_id,))
+    cursor.execute("SELECT * FROM products WHERE product_id = ? AND admin_id = ?", (item_id, admin_id))
     product = cursor.fetchone()
 
     cursor.close()
     conn.close()
 
     if not product:
-        flash("Product not found!", "danger")
+        flash("Product not found or access denied!", "danger")
         return redirect('/admin/item-list')
 
     return render_template("admin/view_item.html", product=product)
 
 
 # =================================================================
-# ROUTE 11: SHOW UPDATE FORM WITH EXISTING DATA
+# ROUTE 11: SHOW UPDATE FORM WITH EXISTING DATA (VALIDATES ADMIN OWNERSHIP)
 # =================================================================
 @app.route('/admin/update-item/<int:item_id>', methods=['GET'])
 def update_item_page(item_id):
@@ -574,25 +605,25 @@ def update_item_page(item_id):
         flash("Please login!", "danger")
         return redirect('/admin-login')
 
-    # Fetch product data
+    admin_id = session['admin_id']
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM products WHERE product_id = ?", (item_id,))
+    cursor.execute("SELECT * FROM products WHERE product_id = ? AND admin_id = ?", (item_id, admin_id))
     product = cursor.fetchone()
 
     cursor.close()
     conn.close()
 
     if not product:
-        flash("Product not found!", "danger")
+        flash("Product not found or access denied!", "danger")
         return redirect('/admin/item-list')
 
     return render_template("admin/update_item.html", product=product)
 
 
 # =================================================================
-# ROUTE-12: UPDATE PRODUCT + OPTIONAL IMAGE REPLACE
+# ROUTE-12: UPDATE PRODUCT + OPTIONAL IMAGE REPLACE (VALIDATES ADMIN OWNERSHIP)
 # =================================================================
 @app.route('/admin/update-item/<int:item_id>', methods=['POST'])
 def update_item(item_id):
@@ -601,54 +632,54 @@ def update_item(item_id):
         flash("Please login!", "danger")
         return redirect('/admin-login')
 
+    admin_id = session['admin_id']
+
     # 1️⃣ Get updated form data
     name = request.form['name']
     description = request.form['description']
     category = request.form['category']
     price = request.form['price']
 
-    new_image = request.files['image']
+    new_image = request.files.get('image')
 
-    # 2️⃣ Fetch old product data
+    # 2️⃣ Fetch old product data with ownership check
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM products WHERE product_id = ?", (item_id,))
+    cursor.execute("SELECT * FROM products WHERE product_id = ? AND admin_id = ?", (item_id, admin_id))
     product = cursor.fetchone()
 
     if not product:
-        flash("Product not found!", "danger")
+        cursor.close()
+        conn.close()
+        flash("Product not found or access denied!", "danger")
         return redirect('/admin/item-list')
 
     old_image_name = product['image']
 
     # 3️⃣ If admin uploaded a new image → replace it
     if new_image and new_image.filename != "":
-        
-        # Secure filename
-        from werkzeug.utils import secure_filename
         new_filename = secure_filename(new_image.filename)
-
-        # Save new image
         new_image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
         new_image.save(new_image_path)
 
-        # Delete old image file
-        old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], old_image_name)
-        if os.path.exists(old_image_path):
-            os.remove(old_image_path)
+        if old_image_name:
+            old_image_path = os.path.join(app.config['UPLOAD_FOLDER'], old_image_name)
+            if os.path.exists(old_image_path):
+                try:
+                    os.remove(old_image_path)
+                except OSError:
+                    pass
 
         final_image_name = new_filename
-
     else:
-        # No new image uploaded → keep old one
         final_image_name = old_image_name
 
-    # 4️⃣ Update product in the database
+    # 4️⃣ Update product in database strictly checking admin_id
     cursor.execute("""
         UPDATE products
         SET name = ?, description = ?, category = ?, price = ?, image = ?
-        WHERE product_id = ?
-    """, (name, description, category, price, final_image_name, item_id))
+        WHERE product_id = ? AND admin_id = ?
+    """, (name, description, category, price, final_image_name, item_id, admin_id))
 
     conn.commit()
     cursor.close()

@@ -34,7 +34,7 @@
     <div class="stat-icon">📦</div>
     <div class="stat-info">
       <div class="stat-number">{{ stats.total_products|default(0) }}</div>
-      <div class="stat-label">Catalog Products</div>
+      <div class="stat-label">My Products</div>
     </div>
   </div>
 
@@ -42,7 +42,7 @@
     <div class="stat-icon">🏷️</div>
     <div class="stat-info">
       <div class="stat-number">{{ stats.total_categories|default(0) }}</div>
-      <div class="stat-label">Active Categories</div>
+      <div class="stat-label">My Categories</div>
     </div>
   </div>
 
@@ -50,7 +50,7 @@
     <div class="stat-icon">📋</div>
     <div class="stat-info">
       <div class="stat-number">{{ stats.total_orders|default(0) }}</div>
-      <div class="stat-label">Total Customer Orders</div>
+      <div class="stat-label">My Product Orders</div>
     </div>
   </div>
 
@@ -58,7 +58,7 @@
     <div class="stat-icon">💰</div>
     <div class="stat-info">
       <div class="stat-number">₹{{ "%.2f"|format(stats.total_revenue|default(0)) }}</div>
-      <div class="stat-label">Store Sales Revenue</div>
+      <div class="stat-label">My Product Sales</div>
     </div>
   </div>
 </div>
@@ -103,10 +103,10 @@
 <div class="card" style="margin-top: 28px;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
     <div>
-      <h3 style="margin:0;">Recent Catalog Items</h3>
-      <p style="margin:0; font-size:13px;">Latest products added to the store</p>
+      <h3 style="margin:0;">My Catalog Items</h3>
+      <p style="margin:0; font-size:13px;">Latest products added to the store by you</p>
     </div>
-    <a href="/admin/item-list" class="btn btn-light btn-sm">View All Products →</a>
+    <a href="/admin/item-list" class="btn btn-light btn-sm">View My Inventory →</a>
   </div>
 
   {% if recent_products %}

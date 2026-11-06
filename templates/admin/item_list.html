@@ -5,7 +5,7 @@
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
   <div>
     <h1 style="margin:0 0 6px;">Product Inventory</h1>
-    <p style="margin:0;">Manage and organize all store products</p>
+    <p style="margin:0;">Manage and organize your store products</p>
   </div>
   <div style="display:flex; gap:10px;">
     <a href="/admin/add-item" class="btn btn-primary">➕ Add New Product</a>
@@ -15,7 +15,7 @@
 
 <!-- Search & Filter Controls -->
 <div class="card" style="margin-bottom:26px; padding:20px;">
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; align-items:center;">
+  <div class="search-filter-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; align-items:center;">
     <!-- Search Form -->
     <form method="GET" action="/admin/item-list" style="margin:0; display:flex; gap:10px;">
       <input type="text" name="search" placeholder="Search product name..." 
