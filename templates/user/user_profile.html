@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}My User Profile - SmartCart{% endblock %}
+
+{% block content %}
+<div class="profile-card">
+  <!-- Profile Header -->
+  <div class="profile-header-area">
+    {% if user and user.profile_image %}
+      <img class="profile-avatar-lg" src="{{ url_for('static', filename='uploads/user_profiles/' + user.profile_image) }}" alt="User Profile Photo">
+    {% else %}
+      <div class="profile-avatar-placeholder-lg">{{ (user.name or 'U')[:1]|upper }}</div>
+    {% endif %}
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
+        <h2 style="margin:0;">{{ user.name }}</h2>
+        <span class="badge badge-purple">Customer Profile</span>
+      </div>
+      <p style="margin:0 0 6px;">{{ user.email }}</p>
+      <div style="font-size:12px; color:var(--muted);">
+        User ID: #{{ user.user_id }} · Account Status: <strong style="color:var(--success);">Active</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Form -->
+  <h3 style="margin-bottom:18px;">Update Personal Details</h3>
+
+  <form method="POST" action="{{ url_for('user_profile') }}" enctype="multipart/form-data">
+    <div class="form-grid">
+      <div>
+        <label for="name">Full Name</label>
+        <input id="name" type="text" name="name" value="{{ user.name }}" required>
+      </div>
+      <div>
+        <label for="email">Email Address</label>
+        <input id="email" type="email" name="email" value="{{ user.email }}" required>
+      </div>
+    </div>
+
+    <div>
+      <label for="profile_image">Profile Picture (optional)</label>
+      <input id="profile_image" type="file" name="profile_image" accept="image/*">
+      <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:16px;">
+        Upload a JPG, PNG, or WEBP picture to customize your user profile.
+      </small>
+    </div>
+
+    <div>
+      <label for="password">Change Password (optional)</label>
+      <input id="password" type="password" name="password" placeholder="Leave blank to keep your current password">
+      <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:20px;">
+        Only enter a new password if you wish to change your account password.
+      </small>
+    </div>
+
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+      <button type="submit" class="btn btn-primary">💾 Save Profile Changes</button>
+      <a class="btn btn-light" href="{{ url_for('user_dashboard') }}">← Back to Dashboard</a>
+      <a class="btn btn-outline" href="/user/products">🛍️ Browse Products</a>
+    </div>
+  </form>
+
+  <!-- User Order History Section -->
+  <div style="margin-top: 40px; border-top: 1px solid var(--line); padding-top: 28px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <h3 style="margin:0;">My Order History</h3>
+        <p style="margin:0; font-size:13px;">All orders associated with your user account</p>
+      </div>
+      {% if orders %}
+        <span class="badge badge-purple">{{ orders|length }} total orders</span>
+      {% endif %}
+    </div>
+
+    {% if orders %}
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Delivery Address</th>
+              <th>Total Amount</th>
+              <th>Payment Status</th>
+              <th>Invoice</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+              <tr>
+                <td><strong>#{{ o.order_id }}</strong></td>
+                <td style="color:var(--muted)">{{ o.created_at.strftime('%d %b %Y, %I:%M %p') if o.created_at else 'Recent' }}</td>
+                <td>
+                  <div style="font-size:13px;">{{ o.address or 'Standard Address' }}</div>
+                  <div style="font-size:11px; color:var(--muted)">{{ o.city }} - {{ o.pincode }}</div>
+                </td>
+                <td><strong style="color:var(--primary-dark)">₹{{ "%.2f"|format(o.amount) }}</strong></td>
+                <td>
+                  {% if o.payment_status|lower == 'paid' %}
+                    <span class="badge badge-success">✓ Paid</span>
+                  {% else %}
+                    <span class="badge badge-warning">{{ o.payment_status|capitalize }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{{ url_for('download_invoice', order_id=o.order_id) }}" class="btn btn-light btn-sm" title="Download Official Invoice PDF">
+                    📄 Invoice PDF
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:32px 16px; background:#faf8ff; border-radius:var(--radius-md); border:1px dashed var(--line-purple);">
+        <p style="margin-bottom:12px;">No past orders found in your profile.</p>
+        <a href="/user/products" class="btn btn-primary btn-sm">Explore Products & Start Shopping</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

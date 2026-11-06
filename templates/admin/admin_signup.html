@@ -1,29 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Admin Registration - SmartCart{% endblock %}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Signup</title>
-</head>
-<body>
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="border-top: 4px solid var(--primary);">
+    <div class="auth-header">
+      <div class="auth-icon" style="background: linear-gradient(135deg, #4c1d95 0%, #1e1b4b 100%);">🛡️</div>
+      <h2>Admin Registration</h2>
+      <p>Register as a store administrator with OTP verification</p>
+    </div>
 
-<h2>Admin Registration</h2>
+    <form method="POST" action="/admin-signup">
+      <div>
+        <label for="name">Administrator Name</label>
+        <input id="name" type="text" name="name" placeholder="Full name" required>
+      </div>
 
-<!-- Flash messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p style="color:red;">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
+      <div>
+        <label for="email">Administrator Email</label>
+        <input id="email" type="email" name="email" placeholder="admin@example.com" required>
+        <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:18px;">
+          An OTP will be sent to this email to verify account creation.
+        </small>
+      </div>
 
-<form method="POST" action="/admin-signup">
-    <label>Name:</label><br>
-    <input type="text" name="name" required><br><br>
+      <button type="submit" style="width: 100%;" class="btn btn-primary btn-lg">
+        ✉️ Send Verification OTP
+      </button>
+    </form>
 
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
-
-    <button type="submit">Send OTP</button>
-</form>
-
-</body>
-</html>
+    <div class="auth-footer">
+      <p style="margin-bottom:8px;">
+        Already registered? <a href="/admin-login">Admin Login</a>
+      </p>
+      <p style="margin:0; font-size:12px;">
+        Not an admin? <a href="/user-login">Customer Login →</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

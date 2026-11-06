@@ -1,93 +1,110 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Your Cart</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Your Shopping Cart - SmartCart{% endblock %}
 
-<h2>Your Cart</h2>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-        <p style="color:{{ 'green' if category == 'success' else 'red' }};">{{ message }}</p>
-    {% endfor %}
-{% endwith %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h1 style="margin:0 0 6px;">Your Shopping Cart</h1>
+    <p style="margin:0;">Select items to purchase and proceed to checkout</p>
+  </div>
+  <a href="/user/products" class="btn btn-light btn-sm">← Continue Shopping</a>
+</div>
 
 {% if not cart %}
-
-    <p>Your cart is empty.</p>
-    <a href="/user/products">Shop Now</a>
-
+  <div class="card" style="text-align:center; padding:52px 24px;">
+    <div style="font-size:56px; margin-bottom:16px;">🛒</div>
+    <h2>Your Cart is Currently Empty</h2>
+    <p style="margin-bottom:22px;">Explore our catalogue and pick items you love!</p>
+    <a href="/user/products" class="btn btn-primary btn-lg">🛍️ Shop Products Now</a>
+  </div>
 {% else %}
+  <form action="{{ url_for('checkout') }}" method="POST" onsubmit="return checkSelection()">
+    <div class="card" style="padding:0; overflow:hidden; margin-bottom:24px;">
+      <div class="table-responsive" style="margin:0; border:0; box-shadow:none;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:50px; text-align:center;">
+                <input type="checkbox" id="selectAll" onchange="toggleAll(this)" style="margin:0; width:18px; height:18px; cursor:pointer;">
+              </th>
+              <th style="width:90px;">Item</th>
+              <th>Product Details</th>
+              <th>Price</th>
+              <th style="text-align:center;">Quantity</th>
+              <th>Total</th>
+              <th style="text-align:center;">Remove</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pid, item in cart.items() %}
+              <tr>
+                <td style="text-align:center;">
+                  <input type="checkbox"
+                         name="selected_products"
+                         value="{{ pid }}"
+                         class="product-checkbox"
+                         data-price="{{ item.price }}"
+                         data-quantity="{{ item.quantity }}"
+                         onchange="calculateTotal()"
+                         style="width:19px; height:19px; cursor:pointer; margin:0;">
+                </td>
+                <td>
+                  {% if item.image %}
+                    <img src="/static/uploads/product_images/{{ item.image }}" alt="{{ item.name }}" style="width:65px; height:65px; object-fit:contain; border-radius:10px; background:#f8f7ff; border:1px solid var(--line-purple);">
+                  {% else %}
+                    <div style="width:65px; height:65px; background:#f8f7ff; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px;">📦</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <strong>{{ item.name }}</strong>
+                </td>
+                <td><strong>₹{{ "%.2f"|format(item.price) }}</strong></td>
+                <td style="text-align:center;">
+                  <div style="display:inline-flex; align-items:center; gap:8px; background:#faf8ff; padding:4px 10px; border-radius:20px; border:1px solid var(--line-purple);">
+                    <a href="/user/cart/decrease/{{ pid }}" style="width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; background:#fff; border-radius:50%; font-weight:800; color:var(--primary); text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,0.1);">-</a>
+                    <span style="font-weight:700; min-width:20px; text-align:center;">{{ item.quantity }}</span>
+                    <a href="/user/cart/increase/{{ pid }}" style="width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; background:#fff; border-radius:50%; font-weight:800; color:var(--primary); text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,0.1);">+</a>
+                  </div>
+                </td>
+                <td><strong style="color:var(--primary-dark)">₹{{ "%.2f"|format(item.price * item.quantity) }}</strong></td>
+                <td style="text-align:center;">
+                  <a href="/user/cart/remove/{{ pid }}" style="color:var(--danger); text-decoration:none; font-size:18px;" title="Remove Item">🗑️</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-<form action="{{ url_for('checkout') }}" method="POST" onsubmit="return checkSelection()">
+    <!-- Summary Box -->
+    <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+      <div class="card" style="min-width:320px; max-width:440px; width:100%; padding:26px; border-top:4px solid var(--primary);">
+        <h3 style="margin-top:0; margin-bottom:14px;">Order Summary</h3>
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; color:var(--muted); font-size:14px;">
+          <span>Entire Cart Total:</span>
+          <span>₹{{ "%.2f"|format(grand_total) }}</span>
+        </div>
 
-<table border="1" cellpadding="10">
+        <div style="display:flex; justify-content:space-between; margin-bottom:18px; font-size:18px; font-weight:800; color:var(--primary-dark); padding-top:10px; border-top:1px solid var(--line);">
+          <span>Selected Total:</span>
+          <span>₹<span id="selectedTotal">0.00</span></span>
+        </div>
 
-    <tr>
-        <th><input type="checkbox" id="selectAll" onchange="toggleAll(this)"> All</th>
-        <th>Image</th>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Total</th>
-        <th>Action</th>
-    </tr>
+        <small style="display:block; color:var(--muted); margin-bottom:16px;">
+          Tick the checkboxes next to items you wish to purchase now.
+        </small>
 
-    {% for pid, item in cart.items() %}
-    <tr>
-        <td>
-            <input type="checkbox"
-                   name="selected_products"
-                   value="{{ pid }}"
-                   class="product-checkbox"
-                   data-price="{{ item.price }}"
-                   data-quantity="{{ item.quantity }}"
-                   onchange="calculateTotal()"
-                   style="width:20px;height:20px;">
-        </td>
-
-        <td>
-            <img src="/static/uploads/product_images/{{ item.image }}" width="80">
-        </td>
-
-        <td>{{ item.name }}</td>
-
-        <td>₹{{ "%.2f"|format(item.price) }}</td>
-
-        <td>
-            <a href="/user/cart/decrease/{{ pid }}">-</a>
-            {{ item.quantity }}
-            <a href="/user/cart/increase/{{ pid }}">+</a>
-        </td>
-
-        <td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td>
-
-        <td>
-            <a href="/user/cart/remove/{{ pid }}">Remove</a>
-        </td>
-    </tr>
-    {% endfor %}
-
-</table>
-
-<br>
-
-<h3>Selected Products Total: ₹<span id="selectedTotal">0.00</span></h3>
-
-<p>Complete Cart Total: ₹{{ "%.2f"|format(grand_total) }}</p>
-
-<button type="submit" id="proceedBtn" disabled>Proceed</button>
-
-</form>
-
-<br>
-<a href="/user/products">Continue Shopping</a>
-
+        <button type="submit" id="proceedBtn" disabled class="btn btn-primary btn-lg" style="width:100%;">
+          Proceed to Checkout →
+        </button>
+      </div>
+    </div>
+  </form>
 {% endif %}
 
 <script>
-// remember which boxes are ticked (so + / - / reload doesn't clear them)
 function saveTicks() {
     try {
         var ticked = [];
@@ -134,13 +151,12 @@ function toggleAll(master) {
 
 function checkSelection() {
     if (!document.querySelector('.product-checkbox:checked')) {
-        alert('Please tick at least one product!');
+        alert('Please tick at least one product to checkout!');
         return false;
     }
     return true;
 }
 
-// restore ticks on page load
 (function () {
     try {
         var ticked = JSON.parse(sessionStorage.getItem('ticked') || '[]');
@@ -151,6 +167,4 @@ function checkSelection() {
     calculateTotal();
 })();
 </script>
-
-</body>
-</html>
+{% endblock %}

@@ -1,35 +1,52 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>User Registration</title>
-</head>
-<body>	
+{% extends "base.html" %}
+{% block title %}Create User Profile - SmartCart{% endblock %}
 
-<h2>User Registration</h2>
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon">✨</div>
+      <h2>Create User Profile</h2>
+      <p>Sign up to shop, manage your cart, and track orders</p>
+    </div>
 
-<!-- Flash messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p style="color:red;">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
+    <form method="POST" action="/user-register" enctype="multipart/form-data">
+      <div>
+        <label for="name">Full Name</label>
+        <input id="name" type="text" name="name" placeholder="Enter your full name" required>
+      </div>
 
-<form method="POST" action="/user-register">
+      <div>
+        <label for="email">Email Address</label>
+        <input id="email" type="email" name="email" placeholder="name@example.com" required>
+      </div>
 
-    <label>Name:</label><br>
-    <input type="text" name="name" required><br><br>
+      <div>
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="Create a strong password" required>
+      </div>
 
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
+      <div>
+        <label for="profile_image">Profile Picture (optional)</label>
+        <input id="profile_image" type="file" name="profile_image" accept="image/*">
+        <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:18px;">
+          Upload your photo now or add it later in your profile settings.
+        </small>
+      </div>
 
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
+      <button type="submit" style="width: 100%;" class="btn btn-primary btn-lg">
+        🚀 Create Account & Open Profile
+      </button>
+    </form>
 
-    <button type="submit">Register</button>
-</form>
-
-<br>
-<a href="/user-login">Already have an account? Login</a>
-
-</body>
-</html>
+    <div class="auth-footer">
+      <p style="margin-bottom:8px;">
+        Already have an account? <a href="/user-login">Sign in here</a>
+      </p>
+      <p style="margin:0; font-size:12px;">
+        Are you an administrator? <a href="/admin-login" style="color:var(--muted)">Admin Portal 🔒</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

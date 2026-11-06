@@ -1,28 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Review Checkout - SmartCart</title>
-<style>
-body{font-family:Arial,sans-serif;background:#f7f8fa;margin:30px;color:#222}
-.container{max-width:850px;margin:auto;background:white;padding:24px;border-radius:10px}
-table{width:100%;border-collapse:collapse}td,th{padding:12px;border-bottom:1px solid #ddd;text-align:left}
-a{display:inline-block;padding:10px 16px;background:#0878e8;color:white;text-decoration:none;border-radius:5px;margin-top:15px}
-</style></head>
-<body><div class="container">
-<h2>Address Saved Successfully!</h2>
-<p>This is your checkout review. The order has not been placed yet.</p>
-{% if payment_setup_needed %}<p style="color:#b42318;"><strong>Payment setup needed:</strong> Add your own Razorpay test Key ID and Key Secret in config.py, then open the payment page again.</p><a href="/user/pay">Try Payment Again</a>{% endif %}
-<h3>Delivery Address</h3>
-<p><strong>{{ delivery_address.full_name }}</strong><br>
-{{ delivery_address.phone }}<br>
-{{ delivery_address.address }}<br>
-{{ delivery_address.city }}, {{ delivery_address.state }} - {{ delivery_address.pincode }}</p>
-<h3>Selected Products</h3>
-<table><thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Total</th></tr></thead><tbody>
-{% for pid, item in selected_items.items() %}
-<tr><td>{{ item.name }}</td><td>{{ item.quantity }}</td><td>₹{{ "%.2f"|format(item.price) }}</td><td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td></tr>
-{% endfor %}
-</tbody></table>
-<h3>Selected Total: ₹{{ "%.2f"|format(selected_total) }}</h3>
-<a href="/user/products">Continue Shopping</a>
-</div></body></html>
+{% extends "base.html" %}
+{% block title %}Review Checkout - SmartCart{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:820px; margin:20px auto; padding:32px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 style="margin:0 0 4px;">Review Checkout</h2>
+      <p style="margin:0;">Verify your delivery address and items before payment</p>
+    </div>
+    <span class="badge badge-purple" style="font-size:14px; padding:6px 14px;">
+      Total: ₹{{ "%.2f"|format(selected_total) }}
+    </span>
+  </div>
+
+  {% if payment_setup_needed %}
+    <div class="flash-message flash-danger" style="margin-bottom:20px;">
+      ⚠️ <strong>Razorpay Setup:</strong> Configure your Razorpay Test Key in <code>config.py</code> to proceed.
+    </div>
+  {% endif %}
+
+  <!-- Delivery Information -->
+  <div style="background:#faf8ff; border:1px solid var(--line-purple); border-radius:var(--radius-md); padding:18px; margin-bottom:20px;">
+    <h4 style="margin:0 0 8px; color:var(--primary-dark);">Shipping Address</h4>
+    <p style="margin:0 0 4px; font-weight:700;">{{ delivery_address.full_name }}</p>
+    <p style="margin:0 0 2px; font-size:13px; color:var(--ink-light);">📞 {{ delivery_address.phone }}</p>
+    <p style="margin:0 0 2px; font-size:13px; color:var(--ink-light);">📍 {{ delivery_address.address }}</p>
+    <p style="margin:0; font-size:13px; color:var(--ink-light);">🏙️ {{ delivery_address.city }}, {{ delivery_address.state }} - {{ delivery_address.pincode }}</p>
+  </div>
+
+  <!-- Selected Products Table -->
+  <h4 style="margin:0 0 12px;">Selected Items</h4>
+  <div class="table-responsive" style="margin-bottom:20px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pid, item in selected_items.items() %}
+          <tr>
+            <td><strong>{{ item.name }}</strong></td>
+            <td>{{ item.quantity }}</td>
+            <td>₹{{ "%.2f"|format(item.price) }}</td>
+            <td><strong style="color:var(--primary-dark)">₹{{ "%.2f"|format(item.price * item.quantity) }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-top:16px; border-top:1px solid var(--line);">
+    <a href="/user/cart" class="btn btn-light">← Back to Cart</a>
+    <a href="/user/pay" class="btn btn-primary btn-lg">💳 Proceed to Payment →</a>
+  </div>
+</div>
+{% endblock %}

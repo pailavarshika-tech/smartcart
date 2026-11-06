@@ -1,24 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Product Details</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - SmartCart{% endblock %}
 
-<h2>{{ product.name }}</h2>
+{% block content %}
+<div class="card" style="max-width:920px; margin:20px auto; padding:36px;">
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:36px; align-items:center;">
+    <!-- Product Image Showcase -->
+    <div style="background:#faf8ff; border-radius:var(--radius-lg); padding:28px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line-purple);">
+      {% if product.image %}
+        <img src="/static/uploads/product_images/{{ product.image }}" alt="{{ product.name }}" style="max-height:320px; max-width:100%; object-fit:contain; border-radius:var(--radius-md);">
+      {% else %}
+        <div style="font-size:72px;">🛍️</div>
+      {% endif %}
+    </div>
 
-<img src="/static/uploads/product_images/{{ product.image }}" width="300"><br><br>
+    <!-- Product Details -->
+    <div>
+      <span class="badge badge-purple" style="margin-bottom:12px;">{{ product.category }}</span>
+      <h1 style="font-size:28px; margin-bottom:12px;">{{ product.name }}</h1>
+      <div style="font-size:28px; font-weight:800; color:var(--primary-dark); margin-bottom:18px;">
+        ₹{{ "%.2f"|format(product.price) }}
+      </div>
 
-<p><strong>Description:</strong> {{ product.description }}</p>
-<p><strong>Category:</strong> {{ product.category }}</p>
-<p><strong>Price:</strong> ₹{{ product.price }}</p>
+      <div style="margin-bottom:24px;">
+        <h4 style="margin:0 0 6px; font-size:14px; text-transform:uppercase; color:var(--muted); letter-spacing:0.5px;">Product Overview</h4>
+        <p style="margin:0; font-size:15px; color:var(--ink-light); line-height:1.7;">
+          {{ product.description or 'Premium quality item curated specifically for SmartCart shoppers.' }}
+        </p>
+      </div>
 
-<br>
-<a href="/user/products">Back to Products</a>
-
-<form action="/user/add-to-cart/{{ product.product_id }}" method="GET">
-    <button type="submit">Add to Cart</button>
-</form>
-
-</body>
-</html>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <form action="/user/add-to-cart/{{ product.product_id }}" method="GET" style="margin:0;">
+          <button type="submit" class="btn btn-primary btn-lg">
+            🛒 Add to Cart
+          </button>
+        </form>
+        <a href="/user/products" class="btn btn-light btn-lg">← Back to Catalog</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,57 +1,93 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Order Success</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Order Placed Successfully - SmartCart{% endblock %}
 
-<h2 style="color:green;">Payment Successful! Order Placed.</h2>
-<a href="{{ url_for('download_invoice', order_id=order.database_order_id) }}"
-   class="btn btn-primary">
-    Download Invoice PDF
-</a>
+{% block content %}
+<div class="card" style="max-width:820px; margin:20px auto; padding:36px; text-align:center;">
+  <div style="width:72px; height:72px; background:#ecfdf5; color:#10b981; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:16px; border:2px solid #a7f3d0; box-shadow:0 6px 20px rgba(16, 185, 129, 0.2);">
+    ✓
+  </div>
 
-<p>Payment ID: {{ order.payment_id }}</p>
-<p>Order ID: {{ order.order_id }}</p>
+  <h1 style="font-size:28px; margin-bottom:8px; color:var(--ink);">Payment Successful!</h1>
+  <p style="margin-bottom:20px; font-size:15px; color:var(--muted);">
+    Thank you for your purchase. Your order has been placed and confirmed.
+  </p>
 
-<h3>Delivery Details</h3>
+  <div style="display:flex; justify-content:center; gap:12px; margin-bottom:28px; flex-wrap:wrap;">
+    <a href="{{ url_for('download_invoice', order_id=order.database_order_id) }}" class="btn btn-primary btn-lg">
+      📄 Download Invoice PDF
+    </a>
+    <a href="/user-dashboard" class="btn btn-outline btn-lg">
+      👤 Go to My Profile
+    </a>
+  </div>
 
-<p>Name: {{ order.name }}</p>
-<p>Email: {{ order.email }}</p>
-<p>Phone: {{ order.phone }}</p>
-<p>Door No: {{ order.door_no }}</p>
-<p>Address: {{ order.address }}</p>
-<p>City: {{ order.city }}</p>
-<p>State: {{ order.state }}</p>
-<p>Pincode: {{ order.pincode }}</p>
+  <!-- Order Details Box -->
+  <div style="background:#faf8ff; border:1px solid var(--line-purple); border-radius:var(--radius-lg); padding:24px; text-align:left; margin-bottom:28px;">
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--line);">
+      <div>
+        <span style="font-size:12px; text-transform:uppercase; color:var(--muted); font-weight:700;">Order Reference</span>
+        <div style="font-weight:700; font-size:14px;">{{ order.order_id }}</div>
+      </div>
+      <div>
+        <span style="font-size:12px; text-transform:uppercase; color:var(--muted); font-weight:700;">Payment ID</span>
+        <div style="font-weight:700; font-size:14px; color:var(--primary);">{{ order.payment_id }}</div>
+      </div>
+      <div>
+        <span style="font-size:12px; text-transform:uppercase; color:var(--muted); font-weight:700;">Status</span>
+        <div><span class="badge badge-success">✓ Confirmed</span></div>
+      </div>
+    </div>
 
-<hr>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:20px;">
+      <div>
+        <h4 style="margin:0 0 8px; color:var(--primary-dark);">Delivery Information</h4>
+        <div style="font-size:14px; line-height:1.6;">
+          <strong>{{ order.name }}</strong><br>
+          📞 {{ order.phone }}<br>
+          📍 {{ order.address }}<br>
+          🏙️ {{ order.city }}, {{ order.state }} - {{ order.pincode }}
+        </div>
+      </div>
 
-<h3>Ordered Products</h3>
+      <div>
+        <h4 style="margin:0 0 8px; color:var(--primary-dark);">Summary</h4>
+        <div style="font-size:14px; line-height:1.6;">
+          Total Items: {{ order['items']|length }}<br>
+          Payment Mode: Razorpay Online<br>
+          <div style="font-size:18px; font-weight:800; color:var(--primary-dark); margin-top:8px;">
+            Total Paid: ₹{{ "%.2f"|format(order.total) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Total</th>
-    </tr>
+  <!-- Ordered Products Table -->
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Purchased Product</th>
+          <th>Unit Price</th>
+          <th>Quantity</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order['items'] %}
+          <tr>
+            <td><strong>{{ item.name }}</strong></td>
+            <td>₹{{ "%.2f"|format(item.price) }}</td>
+            <td>{{ item.quantity }}</td>
+            <td><strong style="color:var(--primary-dark)">₹{{ "%.2f"|format(item.total) }}</strong></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-    {% for item in order['items'] %}
-    <tr>
-        <td>{{ item.name }}</td>
-        <td>₹{{ "%.2f"|format(item.price) }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>₹{{ "%.2f"|format(item.total) }}</td>
-    </tr>
-    {% endfor %}
-</table>
-
-<h3>Grand Total: ₹{{ "%.2f"|format(order.total) }}</h3>
-
-<br>
-
-<a href="/user/products">Continue Shopping</a>
-
-</body>
-</html>
+  <div style="margin-top:24px;">
+    <a href="/user/products" class="btn btn-light">🛍️ Continue Shopping</a>
+  </div>
+</div>
+{% endblock %}

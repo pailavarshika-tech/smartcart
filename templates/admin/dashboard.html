@@ -1,31 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard & Profile - SmartCart{% endblock %}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Dashboard</title>
-</head>
-<body>
+{% block content %}
+<!-- Admin Profile Hero Banner -->
+<div class="profile-hero">
+  <div class="hero-avatar-area">
+    {% if admin and admin.profile_image %}
+      <img class="hero-avatar" src="{{ url_for('static', filename='uploads/admin_profiles/' + admin.profile_image) }}" alt="Admin Profile Photo">
+    {% else %}
+      <div class="hero-avatar-placeholder">{{ (admin_name or 'A')[:1]|upper }}</div>
+    {% endif %}
+    <div class="hero-user-details">
+      <h1>{{ admin_name }}</h1>
+      <p>{{ (admin and admin.email) or session.get('admin_email', 'admin@smartcart.com') }}</p>
+      <div class="hero-badges">
+        <span class="hero-badge">🛡️ Store Administrator</span>
+        {% if admin and admin.admin_id %}
+          <span class="hero-badge">Admin ID: #{{ admin.admin_id }}</span>
+        {% endif %}
+        <span class="hero-badge">Status: Active</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-actions">
+    <a href="/admin/profile" class="hero-btn">👤 Edit Admin Profile</a>
+    <a href="/admin/add-item" class="btn btn-outline btn-sm" style="color:#fff !important; border-color:rgba(255,255,255,0.4); background:rgba(255,255,255,0.15)">➕ Add Product</a>
+  </div>
+</div>
 
-<h2>Welcome, {{ admin_name }}</h2>
+<!-- Store Metrics Overview -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">📦</div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.total_products|default(0) }}</div>
+      <div class="stat-label">Catalog Products</div>
+    </div>
+  </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-        <p>{{ message }}</p>
-    {% endfor %}
-{% endwith %}
+  <div class="stat-card">
+    <div class="stat-icon">🏷️</div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.total_categories|default(0) }}</div>
+      <div class="stat-label">Active Categories</div>
+    </div>
+  </div>
 
-<p>This is your SmartCart admin dashboard.</p>
+  <div class="stat-card">
+    <div class="stat-icon">📋</div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.total_orders|default(0) }}</div>
+      <div class="stat-label">Total Customer Orders</div>
+    </div>
+  </div>
 
-<a href="/admin/add-item">Add Product</a>
-<br><br>
+  <div class="stat-card">
+    <div class="stat-icon">💰</div>
+    <div class="stat-info">
+      <div class="stat-number">₹{{ "%.2f"|format(stats.total_revenue|default(0)) }}</div>
+      <div class="stat-label">Store Sales Revenue</div>
+    </div>
+  </div>
+</div>
 
-<a href="/admin/item-list">View All Products</a>
-<br><br>
+<!-- Admin Quick Action Links -->
+<h3 style="margin-bottom: 14px; font-size: 20px;">Store Management Actions</h3>
+<div class="action-grid">
+  <a href="/admin/add-item" class="action-card">
+    <div class="action-card-icon">➕</div>
+    <div class="action-card-text">
+      <h4>Add New Product</h4>
+      <p>Upload new products with image, category, and price</p>
+    </div>
+  </a>
 
-<a href="/admin-logout">Logout</a>
-<br><br>
+  <a href="/admin/item-list" class="action-card">
+    <div class="action-card-icon">📦</div>
+    <div class="action-card-text">
+      <h4>Product Inventory</h4>
+      <p>Filter, search, view, edit or remove products</p>
+    </div>
+  </a>
 
-<a href="/admin/profile">view profile</a>
+  <a href="/admin/profile" class="action-card">
+    <div class="action-card-icon">👤</div>
+    <div class="action-card-text">
+      <h4>Admin Profile Settings</h4>
+      <p>Change admin name, email, avatar photo and password</p>
+    </div>
+  </a>
 
-</body>
-</html>
+  <a href="/user/products" class="action-card" target="_blank">
+    <div class="action-card-icon">🛍️</div>
+    <div class="action-card-text">
+      <h4>Preview Storefront</h4>
+      <p>View the customer product catalogue in real time</p>
+    </div>
+  </a>
+</div>
+
+<!-- Recent Products Catalog Preview -->
+<div class="card" style="margin-top: 28px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h3 style="margin:0;">Recent Catalog Items</h3>
+      <p style="margin:0; font-size:13px;">Latest products added to the store</p>
+    </div>
+    <a href="/admin/item-list" class="btn btn-light btn-sm">View All Products →</a>
+  </div>
+
+  {% if recent_products %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_products %}
+            <tr>
+              <td style="width: 70px;">
+                {% if p.image %}
+                  <img src="/static/uploads/product_images/{{ p.image }}" alt="{{ p.name }}" style="width:50px; height:50px; object-fit:contain; border-radius:8px; background:#f5f3ff; border:1px solid #e9d5ff;">
+                {% else %}
+                  <div style="width:50px; height:50px; background:#f5f3ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px;">📦</div>
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ p.name }}</strong>
+                {% if p.description %}
+                  <div style="font-size:12px; color:var(--muted); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ p.description }}</div>
+                {% endif %}
+              </td>
+              <td><span class="badge badge-purple">{{ p.category }}</span></td>
+              <td><strong style="color:var(--primary-dark)">₹{{ "%.2f"|format(p.price) }}</strong></td>
+              <td>
+                <div style="display:flex; gap:6px;">
+                  <a href="/admin/view-item/{{ p.product_id }}" class="btn btn-light btn-sm" title="View Details">👁️</a>
+                  <a href="/admin/update-item/{{ p.product_id }}" class="btn btn-outline btn-sm" title="Edit Product">✏️</a>
+                  <a href="/admin/delete-item/{{ p.product_id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this product?')" title="Delete Product">🗑️</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align:center; padding:32px 16px;">
+      <div style="font-size:40px; margin-bottom:10px;">📦</div>
+      <p style="margin-bottom:14px;">No products in the catalog yet.</p>
+      <a href="/admin/add-item" class="btn btn-primary">➕ Add Your First Product</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

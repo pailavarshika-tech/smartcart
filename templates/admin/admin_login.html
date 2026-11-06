@@ -1,32 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Admin Sign In - SmartCart{% endblock %}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Login</title>
-</head>
-<body>
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="border-top: 4px solid var(--primary);">
+    <div class="auth-header">
+      <div class="auth-icon" style="background: linear-gradient(135deg, #4c1d95 0%, #1e1b4b 100%);">🔒</div>
+      <h2>Admin Portal</h2>
+      <p>Secure login for store administrator & inventory management</p>
+    </div>
 
-<h2>Admin Login</h2>
+    <form method="POST" action="/admin-login">
+      <div>
+        <label for="email">Administrator Email</label>
+        <input id="email" type="email" name="email" placeholder="admin@smartcart.com" required>
+      </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-        <p>{{ message }}</p>
-    {% endfor %}
-{% endwith %}
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label for="password" style="margin:0;">Password</label>
+          <a href="/admin-forgot-password" style="font-size:12px;">Forgot Password?</a>
+        </div>
+        <input id="password" type="password" name="password" placeholder="Enter administrator password" required style="margin-top:6px;">
+      </div>
 
-<form method="POST" action="/admin-login">
+      <button type="submit" style="width: 100%;" class="btn btn-primary btn-lg">
+        🛡️ Access Admin Dashboard
+      </button>
+    </form>
 
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
-
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
-
-    <button type="submit">Login</button>
-
-</form>
-
-<p><a href="/admin-forgot-password">Forgot Password?</a></p>
-
-</body>
-</html>
+    <div class="auth-footer">
+      <p style="margin-bottom:8px;">
+        Need to register a new admin account? <a href="/admin-signup">Admin Sign Up</a>
+      </p>
+      <p style="margin:0; font-size:12px;">
+        Looking to shop as a customer? <a href="/user-login">Customer Login →</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

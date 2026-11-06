@@ -1,40 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Add Product - SmartCart Admin{% endblock %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add Product</title>
-</head>
-<body>
-    <h2>Add New Product</h2>
+{% block content %}
+<div class="card" style="max-width:760px; margin:20px auto; padding:36px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 style="margin:0 0 4px;">Add New Product</h2>
+      <p style="margin:0;">Add a new item to your online catalogue</p>
+    </div>
+    <a href="/admin/item-list" class="btn btn-light btn-sm">← View All Products</a>
+  </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endwith %}
+  <form method="POST" action="/admin/add-item" enctype="multipart/form-data">
+    <div>
+      <label for="name">Product Title</label>
+      <input id="name" type="text" name="name" placeholder="e.g. Wireless Noise-Cancelling Headphones" required>
+    </div>
 
-    <form method="POST" action="/admin/add-item"
-          enctype="multipart/form-data">
+    <div class="form-grid">
+      <div>
+        <label for="category">Category</label>
+        <input id="category" type="text" name="category" placeholder="e.g. Electronics, Fashion, Home" required>
+      </div>
 
-        <label>Product Name:</label><br>
-        <input type="text" name="name" required><br><br>
+      <div>
+        <label for="price">Price (₹)</label>
+        <input id="price" type="number" name="price" min="0.01" step="0.01" placeholder="999.00" required>
+      </div>
+    </div>
 
-        <label>Description:</label><br>
-        <textarea name="description" required></textarea><br><br>
+    <div>
+      <label for="description">Product Description</label>
+      <textarea id="description" name="description" rows="4" placeholder="Describe features, specifications, and details of this product..." required></textarea>
+    </div>
 
-        <label>Category:</label><br>
-        <input type="text" name="category" required><br><br>
+    <div>
+      <label for="image">Product Image</label>
+      <input id="image" type="file" name="image" accept="image/*" required>
+      <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:20px;">
+        Upload a clear, high-resolution product photo (JPG, PNG, WEBP).
+      </small>
+    </div>
 
-        <label>Price:</label><br>
-        <input type="number" name="price"
-               min="0.01" step="0.01" required><br><br>
-
-        <label>Product Image:</label><br>
-        <input type="file" name="image"
-               accept="image/*" required><br><br>
-
-        <button type="submit">Add Product</button>
-    </form>
-</body>
-</html>
+    <div style="display:flex; gap:12px; align-items:center; margin-top:10px;">
+      <button type="submit" class="btn btn-primary btn-lg">➕ Publish Product</button>
+      <a href="/admin/item-list" class="btn btn-light">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

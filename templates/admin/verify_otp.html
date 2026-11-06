@@ -1,28 +1,36 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Verify OTP</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Verify OTP - SmartCart{% endblock %}
 
-<h2>Verify OTP</h2>
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="border-top: 4px solid var(--primary);">
+    <div class="auth-header">
+      <div class="auth-icon">🔑</div>
+      <h2>Verify OTP</h2>
+      <p>Enter the 6-digit code sent to your email to complete registration</p>
+    </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p style="color:red;">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
+    <form method="POST" action="/verify-otp">
+      <div>
+        <label for="otp">One-Time Password (OTP)</label>
+        <input id="otp" type="text" name="otp" placeholder="Enter 6-digit OTP" required style="letter-spacing: 4px; font-weight:700; text-align:center; font-size:18px;">
+      </div>
 
-<form method="POST" action="/verify-otp">
+      <div>
+        <label for="password">Create Administrator Password</label>
+        <input id="password" type="password" name="password" placeholder="Create your administrator password" required>
+      </div>
 
-    <label>Enter OTP:</label><br>
-    <input type="text" name="otp" required><br><br>
+      <button type="submit" style="width: 100%;" class="btn btn-primary btn-lg">
+        ✓ Verify & Create Admin Account
+      </button>
+    </form>
 
-    <label>Create Password:</label><br>
-    <input type="password" name="password" required><br><br>
-
-    <button type="submit">Verify & Register</button>
-</form>
-
-</body>
-</html>
+    <div class="auth-footer">
+      <p style="margin:0;">
+        Didn't receive code? <a href="/admin-signup">Try registering again</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,50 +1,54 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Payment</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Complete Payment - SmartCart{% endblock %}
 
-<h2>Complete Your Payment</h2>
+{% block content %}
+<div class="card" style="max-width:820px; margin:20px auto; padding:32px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 style="margin:0 0 4px;">Complete Your Payment</h2>
+      <p style="margin:0;">Secure test payment via Razorpay</p>
+    </div>
+    <span class="badge badge-purple" style="font-size:14px; padding:6px 14px;">
+      Total: ₹{{ "%.2f"|format(total) }}
+    </span>
+  </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-        <p style="color:red;">{{ message }}</p>
-    {% endfor %}
-{% endwith %}
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px; margin-bottom:24px;">
+    <!-- Order Items Summary -->
+    <div style="background:#faf8ff; border:1px solid var(--line-purple); border-radius:var(--radius-md); padding:18px;">
+      <h4 style="margin:0 0 12px; color:var(--primary-dark);">Items in this order</h4>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for item in items %}
+          <div style="display:flex; justify-content:space-between; font-size:14px; border-bottom:1px solid var(--line); padding-bottom:6px;">
+            <span>{{ item.name }} × {{ item.quantity }}</span>
+            <strong>₹{{ "%.2f"|format(item.total) }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:14px; font-weight:800; font-size:16px; color:var(--primary-dark);">
+        <span>Payable Total:</span>
+        <span>₹{{ "%.2f"|format(total) }}</span>
+      </div>
+    </div>
 
-<h3>Order Summary</h3>
+    <!-- Delivery Address Summary -->
+    <div style="background:#faf8ff; border:1px solid var(--line-purple); border-radius:var(--radius-md); padding:18px;">
+      <h4 style="margin:0 0 12px; color:var(--primary-dark);">Shipping To</h4>
+      <p style="margin:0 0 6px; font-weight:700;">{{ delivery.full_name }}</p>
+      <p style="margin:0 0 4px; font-size:13px; color:var(--ink-light);">📞 {{ delivery.phone }}</p>
+      <p style="margin:0 0 4px; font-size:13px; color:var(--ink-light);">📍 {{ delivery.address }}</p>
+      <p style="margin:0 0 4px; font-size:13px; color:var(--ink-light);">🏙️ {{ delivery.city }}, {{ delivery.state }} - {{ delivery.pincode }}</p>
+      <p style="margin:0; font-size:13px; color:var(--muted);">✉️ {{ delivery.email }}</p>
+    </div>
+  </div>
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Quantity</th>
-        <th>Total</th>
-    </tr>
-
-    {% for item in items %}
-    <tr>
-        <td>{{ item.name }}</td>
-        <td>₹{{ "%.2f"|format(item.price) }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>₹{{ "%.2f"|format(item.total) }}</td>
-    </tr>
-    {% endfor %}
-</table>
-
-<h3>Total Amount: ₹{{ "%.2f"|format(total) }}</h3>
-
-<h3>Delivering To</h3>
-<p>
-    {{ delivery.full_name }} ({{ delivery.phone }})<br>
-    {{ delivery.address }}<br>
-    {{ delivery.city }}, {{ delivery.state }} - {{ delivery.pincode }}<br>
-    {{ delivery.email }}
-</p>
-
-<button id="rzp-button">Pay Now</button>
-<a href="/user/cart">Back to cart</a>
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-top:16px; border-top:1px solid var(--line);">
+    <a href="/user/cart" class="btn btn-light">← Back to Cart</a>
+    <button id="rzp-button" class="btn btn-primary btn-lg" style="box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);">
+      💳 Pay ₹{{ "%.2f"|format(total) }} with Razorpay
+    </button>
+  </div>
+</div>
 
 <!-- Hidden form: sends payment result to Flask for verification -->
 <form id="verifyForm" action="/payment-success" method="POST">
@@ -54,7 +58,6 @@
 </form>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
 <script>
 var options = {
     "key": {{ key_id|tojson }},
@@ -68,6 +71,9 @@ var options = {
         "email": {{ delivery.email|tojson }},
         "contact": {{ delivery.phone|tojson }}
     },
+    "theme": {
+        "color": "#7c3aed"
+    },
     "handler": function (response) {
         document.getElementById('f_payment_id').value = response.razorpay_payment_id;
         document.getElementById('f_order_id').value = response.razorpay_order_id;
@@ -76,17 +82,10 @@ var options = {
     }
 };
 
-var rzp = new Razorpay(options);
-
-rzp.on('payment.failed', function (response) {
-    alert('Payment failed: ' + response.error.description);
-});
-
 document.getElementById('rzp-button').onclick = function (e) {
+    var rzp = new Razorpay(options);
     rzp.open();
     e.preventDefault();
 };
 </script>
-
-</body>
-</html>
+{% endblock %}

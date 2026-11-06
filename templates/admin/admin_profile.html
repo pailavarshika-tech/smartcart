@@ -1,51 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Admin Profile Settings - SmartCart{% endblock %}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Profile</title>
-</head>
-<body>
-
-    <h2>Admin Profile</h2>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endwith %}
-
+{% block content %}
+<div class="profile-card">
+  <div class="profile-header-area">
     {% if admin.profile_image %}
-        <img src="{{ url_for('static', filename='uploads/admin_profiles/' + admin.profile_image) }}"
-             width="120" height="120" alt="Admin Profile">
+      <img class="profile-avatar-lg" src="{{ url_for('static', filename='uploads/admin_profiles/' + admin.profile_image) }}" alt="Admin Profile Photo">
     {% else %}
-        <p>No Profile Image</p>
+      <div class="profile-avatar-placeholder-lg">{{ (admin.name or 'A')[:1]|upper }}</div>
     {% endif %}
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+        <h2 style="margin:0;">{{ admin.name }}</h2>
+        <span class="badge badge-purple">Administrator</span>
+      </div>
+      <p style="margin:0 0 6px;">{{ admin.email }}</p>
+      <div style="font-size:12px; color:var(--muted);">Store ID: #{{ admin.admin_id }} · Full administrative access</div>
+    </div>
+  </div>
 
-    <form method="POST"
-          action="{{ url_for('admin_profile_update') }}"
-          enctype="multipart/form-data">
+  <h3 style="margin-bottom:18px;">Update Administrator Details</h3>
 
-        <label>Name:</label><br>
-        <input type="text" name="name" value="{{ admin.name }}" required>
-        <br><br>
+  <form method="POST" action="{{ url_for('admin_profile_update') }}" enctype="multipart/form-data">
+    <div class="form-grid">
+      <div>
+        <label for="name">Full Name</label>
+        <input id="name" type="text" name="name" value="{{ admin.name }}" required>
+      </div>
+      <div>
+        <label for="email">Email Address</label>
+        <input id="email" type="email" name="email" value="{{ admin.email }}" required>
+      </div>
+    </div>
 
-        <label>Email:</label><br>
-        <input type="email" name="email" value="{{ admin.email }}" required>
-        <br><br>
+    <div>
+      <label for="profile_image">Profile Picture (optional)</label>
+      <input id="profile_image" type="file" name="profile_image" accept="image/*">
+      <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:16px;">
+        Upload JPG, PNG, WEBP or GIF to update your admin avatar.
+      </small>
+    </div>
 
-        <label>New Password (optional):</label><br>
-        <input type="password" name="password">
-        <br><br>
+    <div>
+      <label for="password">Change Password (optional)</label>
+      <input id="password" type="password" name="password" placeholder="Leave blank to keep your current password">
+      <small style="display:block; color:var(--muted); margin-top:-12px; margin-bottom:20px;">
+        Only enter a value if you wish to reset your administrator password.
+      </small>
+    </div>
 
-        <label>Upload Profile Image (optional):</label><br>
-        <input type="file" name="profile_image" accept="image/*">
-        <br><br>
-
-        <button type="submit">Update Profile</button>
-    </form>
-
-    <br>
-    <a href="/admin-dashboard">Back to Dashboard</a>
-
-</body>
-</html>
+    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+      <button type="submit" class="btn btn-primary">💾 Save Profile Changes</button>
+      <a class="btn btn-light" href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

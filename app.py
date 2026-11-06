@@ -40,8 +40,29 @@ def get_db_connection():
         database=config.DB_NAME
     )
 
-ADMIN_UPLOAD_FOLDER = 'static/uploads/admin_profiles'
+ADMIN_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'admin_profiles')
+USER_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'user_profiles')
+PRODUCT_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'product_images')
+
 app.config['ADMIN_UPLOAD_FOLDER'] = ADMIN_UPLOAD_FOLDER
+app.config['USER_UPLOAD_FOLDER'] = USER_UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = PRODUCT_UPLOAD_FOLDER
+
+os.makedirs(ADMIN_UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(USER_UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PRODUCT_UPLOAD_FOLDER, exist_ok=True)
+
+
+# ---------------------------------------------------------
+# ROUTE 0: HOME / LANDING PAGE
+# ---------------------------------------------------------
+@app.route('/')
+def index():
+    if 'admin_id' in session:
+        return redirect('/admin-dashboard')
+    if 'user_id' in session:
+        return redirect('/user-dashboard')
+    return render_template('index.html')
 
 
 # ---------------------------------------------------------
@@ -216,6 +237,7 @@ def admin_login():
     session['admin_id'] = admin['admin_id']
     session['admin_name'] = admin['name']
     session['admin_email'] = admin['email']
+    session['admin_image'] = admin.get('profile_image')
 
     flash("Login successful!", "success")
     return redirect('/admin-dashboard')
@@ -231,10 +253,43 @@ def admin_dashboard():
         flash("Please login to access the dashboard.", "danger")
         return redirect('/admin-login')
 
-    return render_template(
-        'admin/dashboard.html',
-        admin_name=session['admin_name']
-    )
+    admin_id = session['admin_id']
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT * FROM admin WHERE admin_id = %s", (admin_id,))
+        admin = cursor.fetchone()
+
+        cursor.execute("SELECT COUNT(*) AS total_products FROM products")
+        stats_prod = cursor.fetchone()
+
+        cursor.execute("SELECT COUNT(DISTINCT category) AS total_categories FROM products")
+        stats_cat = cursor.fetchone()
+
+        cursor.execute("SELECT COUNT(*) AS total_orders, COALESCE(SUM(amount), 0) AS total_revenue FROM orders")
+        stats_orders = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM products ORDER BY product_id DESC LIMIT 6")
+        recent_products = cursor.fetchall()
+
+        stats = {
+            'total_products': stats_prod['total_products'] if stats_prod else 0,
+            'total_categories': stats_cat['total_categories'] if stats_cat else 0,
+            'total_orders': stats_orders['total_orders'] if stats_orders else 0,
+            'total_revenue': float(stats_orders['total_revenue']) if stats_orders and stats_orders['total_revenue'] else 0.0
+        }
+
+        return render_template(
+            'admin/dashboard.html',
+            admin_name=session.get('admin_name', admin['name'] if admin else 'Admin'),
+            admin=admin,
+            stats=stats,
+            recent_products=recent_products
+        )
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # ---------------------------------------------------------
@@ -630,6 +685,8 @@ def admin_profile_update():
 
         session['admin_name'] = name
         session['admin_email'] = email
+        if final_image_name:
+            session['admin_image'] = final_image_name
 
         # Delete old image only after database update succeeds
         if new_image and new_image.filename and old_image_name:
@@ -783,36 +840,69 @@ def user_register():
     if request.method == 'GET':
         return render_template("user/user_register.html")
 
-    name = request.form['name']
-    email = request.form['email']
-    password = request.form['password']
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    profile_image = request.files.get('profile_image')
+
+    if not name or not email or not password:
+        flash("Name, email and password are required!", "danger")
+        return redirect('/user-register')
 
     # Check if user already exists
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
-    existing_user = cursor.fetchone()
+    try:
+        cursor.execute("SELECT user_id FROM users WHERE email=%s", (email,))
+        existing_user = cursor.fetchone()
 
-    if existing_user:
-        flash("Email already registered! Please login.", "danger")
+        if existing_user:
+            flash("Email already registered! Please login.", "danger")
+            return redirect('/user-register')
+
+        final_image_name = None
+        if profile_image and profile_image.filename:
+            from werkzeug.utils import secure_filename
+            new_filename = secure_filename(profile_image.filename)
+            if new_filename:
+                ext = os.path.splitext(new_filename)[1].lower()
+                allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+                if ext in allowed_extensions:
+                    final_image_name = f"user_reg_{random.randint(10000, 99999)}_{new_filename}"
+                    upload_folder = app.config['USER_UPLOAD_FOLDER']
+                    os.makedirs(upload_folder, exist_ok=True)
+                    profile_image.save(os.path.join(upload_folder, final_image_name))
+
+        # Hash password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        # Insert new user with optional profile image
+        cursor.execute(
+            "INSERT INTO users (name, email, password, profile_image) VALUES (%s, %s, %s, %s)",
+            (name, email, hashed_password, final_image_name)
+        )
+        conn.commit()
+        new_user_id = cursor.lastrowid
+
+        # Auto-login the newly registered user so they instantly see their user profile
+        session['user_id'] = new_user_id
+        session['user_name'] = name
+        session['user_email'] = email
+        if final_image_name:
+            session['user_image'] = final_image_name
+
+        flash(f"Welcome to SmartCart, {name}! Your profile is ready.", "success")
+        return redirect('/user-dashboard')
+
+    except Exception:
+        conn.rollback()
+        app.logger.exception("User registration failed")
+        flash("Registration failed. Please try again.", "danger")
         return redirect('/user-register')
-
-    # Hash password
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-    # Insert new user
-    cursor.execute(
-        "INSERT INTO users (name, email, password) VALUES (%s, %s, %s)",
-        (name, email, hashed_password)
-    )
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    flash("Registration successful! Please login.", "success")
-    return redirect('/user-login')
+    finally:
+        cursor.close()
+        conn.close()
 
 # ROUTE 2: User Login (GET + POST)
 # =================================================================
@@ -824,34 +914,41 @@ def user_login():
     if request.method == 'GET':
         return render_template("user/user_login.html")
 
-    email = request.form['email']
-    password = request.form['password']
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
-    user = cursor.fetchone()
+    try:
+        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+        user = cursor.fetchone()
 
-    cursor.close()
-    conn.close()
+        if not user:
+            flash("Email not found! Please register.", "danger")
+            return redirect('/user-login')
 
-    if not user:
-        flash("Email not found! Please register.", "danger")
-        return redirect('/user-login')
+        # Verify password
+        stored_hash = user['password']
+        if isinstance(stored_hash, str):
+            stored_hash = stored_hash.encode('utf-8')
 
-    # Verify password
-    if not bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-        flash("Incorrect password!", "danger")
-        return redirect('/user-login')
+        if not bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+            flash("Incorrect password!", "danger")
+            return redirect('/user-login')
 
-    # Create user session
-    session['user_id'] = user['user_id']
-    session['user_name'] = user['name']
-    session['user_email'] = user['email']
+        # Create user session
+        session['user_id'] = user['user_id']
+        session['user_name'] = user['name']
+        session['user_email'] = user['email']
+        session['user_image'] = user.get('profile_image')
 
-    flash("Login successful!", "success")
-    return redirect('/user-dashboard')
+        flash(f"Welcome back, {user['name']}!", "success")
+        return redirect('/user-dashboard')
+
+    finally:
+        cursor.close()
+        conn.close()
 
 # ROUTE 3: User Dashboard (Protected)
 # =================================================================
@@ -864,7 +961,167 @@ def user_dashboard():
         flash("Please login first!", "danger")
         return redirect('/user-login')
 
-    return render_template("user/user_home.html", user_name=session['user_name'])
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+
+        # Fetch recent orders for this user
+        cursor.execute("""
+            SELECT * FROM orders
+            WHERE user_id = %s
+            ORDER BY order_id DESC
+            LIMIT 5
+        """, (user_id,))
+        recent_orders = cursor.fetchall()
+
+        # Fetch stats for this user
+        cursor.execute("""
+            SELECT COUNT(*) AS order_count, COALESCE(SUM(amount), 0) AS total_spend
+            FROM orders
+            WHERE user_id = %s
+        """, (user_id,))
+        user_stats = cursor.fetchone()
+
+        cart = session.get('cart', {})
+        cart_count = sum(int(item.get('quantity', 0)) for item in cart.values())
+
+        stats = {
+            'order_count': user_stats['order_count'] if user_stats else 0,
+            'total_spend': float(user_stats['total_spend']) if user_stats and user_stats['total_spend'] else 0.0,
+            'cart_count': cart_count
+        }
+
+        return render_template(
+            "user/user_home.html",
+            user=user,
+            user_name=session.get('user_name', user['name'] if user else 'User'),
+            recent_orders=recent_orders,
+            stats=stats
+        )
+    finally:
+        cursor.close()
+        conn.close()
+
+# ROUTE: USER PROFILE (VIEW + UPDATE)
+# =================================================================
+@app.route('/user/profile', methods=['GET', 'POST'])
+def user_profile():
+    if 'user_id' not in session:
+        flash("Please login first!", "danger")
+        return redirect('/user-login')
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        if request.method == 'POST':
+            name = request.form.get('name', '').strip()
+            email = request.form.get('email', '').strip().lower()
+            new_password = request.form.get('password', '').strip()
+            new_image = request.files.get('profile_image')
+
+            if not name or not email:
+                flash("Name and email are required.", "danger")
+                return redirect('/user/profile')
+
+            cursor.execute("SELECT user_id FROM users WHERE email=%s AND user_id != %s", (email, user_id))
+            if cursor.fetchone():
+                flash("This email is already used by another account.", "danger")
+                return redirect('/user/profile')
+
+            cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+            current_user = cursor.fetchone()
+            if not current_user:
+                session.clear()
+                flash("Account not found. Please log in again.", "danger")
+                return redirect('/user-login')
+
+            old_image_name = current_user.get('profile_image')
+            final_image_name = old_image_name
+
+            if new_image and new_image.filename:
+                from werkzeug.utils import secure_filename
+                new_filename = secure_filename(new_image.filename)
+                if not new_filename:
+                    flash("Invalid image filename!", "danger")
+                    return redirect('/user/profile')
+
+                extension = os.path.splitext(new_filename)[1].lower()
+                allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+                if extension not in allowed_extensions:
+                    flash("Please upload a valid image file (.jpg, .jpeg, .png, .webp)!", "danger")
+                    return redirect('/user/profile')
+
+                new_filename = f"user_{user_id}_{random.randint(1000, 9999)}_{new_filename}"
+                upload_folder = app.config['USER_UPLOAD_FOLDER']
+                os.makedirs(upload_folder, exist_ok=True)
+
+                image_path = os.path.join(upload_folder, new_filename)
+                new_image.save(image_path)
+                final_image_name = new_filename
+
+            if new_password:
+                hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                cursor.execute(
+                    "UPDATE users SET name=%s, email=%s, password=%s, profile_image=%s WHERE user_id=%s",
+                    (name, email, hashed_password, final_image_name, user_id)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE users SET name=%s, email=%s, profile_image=%s WHERE user_id=%s",
+                    (name, email, final_image_name, user_id)
+                )
+
+            conn.commit()
+            session['user_name'] = name
+            session['user_email'] = email
+            if final_image_name:
+                session['user_image'] = final_image_name
+
+            # Delete old image if new one was uploaded
+            if new_image and new_image.filename and old_image_name and old_image_name != final_image_name:
+                old_path = os.path.join(app.config['USER_UPLOAD_FOLDER'], old_image_name)
+                if os.path.isfile(old_path):
+                    try:
+                        os.remove(old_path)
+                    except Exception:
+                        pass
+
+            flash("Profile updated successfully!", "success")
+            return redirect('/user/profile')
+
+        # GET request
+        cursor.execute("SELECT * FROM users WHERE user_id=%s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            session.clear()
+            flash("User account not found. Please login again.", "danger")
+            return redirect('/user-login')
+
+        # Fetch all orders for this user for the profile order history
+        cursor.execute("""
+            SELECT * FROM orders
+            WHERE user_id = %s
+            ORDER BY order_id DESC
+        """, (user_id,))
+        orders = cursor.fetchall()
+
+        return render_template('user/user_profile.html', user=user, orders=orders)
+
+    except Exception:
+        conn.rollback()
+        app.logger.exception("User profile operation failed")
+        flash("Unable to update profile. Please try again.", "danger")
+        return redirect('/user/profile')
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # ROUTE 4: User Logout
 # =================================================================
@@ -876,6 +1133,7 @@ def user_logout():
     session.pop('user_id', None)
     session.pop('user_name', None)
     session.pop('user_email', None)
+    session.pop('user_image', None)
 
     flash("Logged out successfully!", "success")
     return redirect('/user-login')

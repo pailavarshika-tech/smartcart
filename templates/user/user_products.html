@@ -1,123 +1,86 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Products</title>
-    <style>
-    .product-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
+{% extends "base.html" %}
+{% block title %}Shop All Products - SmartCart{% endblock %}
 
-    .product-card {
-        width: 200px;
-        border: 1px solid #ddd;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-        text-align: center;
-        background-color: #fff;
-        transition: 0.3s;
-    }
+{% block content %}
+<!-- Page Header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h1 style="margin:0 0 6px;">Explore Products</h1>
+    <p style="margin:0;">Discover our trending collection with fast checkout</p>
+  </div>
+  <a href="/user/cart" class="btn btn-outline">
+    🛒 View Cart ({{ cart_count|default(0) }})
+  </a>
+</div>
 
-    .product-card:hover {
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
-        transform: translateY(-3px);
-    }
+<!-- Search & Filter Controls -->
+<div class="card" style="margin-bottom:28px; padding:20px;">
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; align-items:center;">
+    <!-- Search Form -->
+    <form method="GET" action="/user/products" style="margin:0; display:flex; gap:10px;">
+      <input type="text" name="search" placeholder="Search by product name..."
+             value="{{ request.args.get('search', '') }}" style="margin:0;">
+      {% if request.args.get('category') %}
+        <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+      {% endif %}
+      <button type="submit" class="btn btn-primary" style="flex-shrink:0;">🔍 Search</button>
+    </form>
 
-    .product-card img {
-        width: 140px;
-        height: 100px;
-        object-fit: contain;
-        margin-bottom: 10px;
-    }
-
-    .product-card h3 {
-        margin: 5px 0;
-        font-size: 18px;
-    }
-
-    .product-card p {
-        margin: 2px 0;
-        font-size: 14px;
-        color: #555;
-    }
-
-    .product-card a {
-        display: inline-block;
-        margin-top: 8px;
-        background-color: #007bff;
-        padding: 8px 12px;
-        border-radius: 5px;
-        color: white;
-        text-decoration: none;
-        font-size: 14px;
-    }
-
-    .product-card a:hover {
-        background-color: #0056b3;
-    }
-</style>
-
-</head>
-<body>
-
-<h2>All Products</h2>\n<a href="/user/cart">View Cart</a>
-
-<!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p style="color:green;">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
-
-<!-- Search Bar -->
-<form method="GET" action="/user/products">
-    <input type="text" name="search" placeholder="Search product..."
-           value="{{ request.args.get('search', '') }}">
-    <button type="submit">Search</button>
-</form>
-
-<br>
-
-<!-- Category Filter -->
-<form method="GET" action="/user/products">
-    <select name="category">
+    <!-- Category Filter Form -->
+    <form method="GET" action="/user/products" style="margin:0; display:flex; gap:10px;">
+      {% if request.args.get('search') %}
+        <input type="hidden" name="search" value="{{ request.args.get('search') }}">
+      {% endif %}
+      <select name="category" onchange="this.form.submit()" style="margin:0;">
         <option value="">All Categories</option>
-
         {% for cat in categories %}
-        <option value="{{ cat.category }}"
+          <option value="{{ cat.category }}"
             {% if request.args.get('category') == cat.category %} selected {% endif %}>
             {{ cat.category }}
-        </option>
+          </option>
         {% endfor %}
-    </select>
-
-    <button type="submit">Filter</button>
-</form>
-
-<hr>
-
-<!-- Product Cards -->
-<div class="product-container">
-
-{% for product in products %}
-<div class="product-card">
-
-    <img src="/static/uploads/product_images/{{ product.image }}">
-
-    <h3>{{ product.name }}</h3>
-    <p>{{ product.category }}</p>
-    <p><strong>₹{{ product.price }}</strong></p>
-
-    <a href="/user/product/{{ product.product_id }}">View Details</a>
-    <form action="/user/add-to-cart/{{ product.product_id }}" method="GET">
-        <button type="submit" style="margin-top:8px;background:#198754;padding:8px 12px;border:0;border-radius:5px;color:white;cursor:pointer;">Add to Cart</button>
+      </select>
+      <button type="submit" class="btn btn-light" style="flex-shrink:0;">Filter</button>
     </form>
-</div>
-{% endfor %}
-
+  </div>
 </div>
 
-</body>
-</html>
+<!-- Product Grid -->
+{% if products %}
+  <div class="product-grid">
+    {% for product in products %}
+      <div class="product-card">
+        <div class="product-img-wrap">
+          {% if product.image %}
+            <img src="/static/uploads/product_images/{{ product.image }}" alt="{{ product.name }}">
+          {% else %}
+            <div style="font-size:48px;">🛍️</div>
+          {% endif %}
+        </div>
+
+        <span class="product-category-tag">{{ product.category }}</span>
+        <h3>{{ product.name }}</h3>
+        <div class="product-price">₹{{ "%.2f"|format(product.price) }}</div>
+
+        <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;">
+          <form action="/user/add-to-cart/{{ product.product_id }}" method="GET" style="margin:0;">
+            <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">
+              🛒 Add to Cart
+            </button>
+          </form>
+          <a href="/user/product/{{ product.product_id }}" class="btn btn-light btn-sm" style="width:100%;">
+            View Details
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card" style="text-align:center; padding:48px 20px;">
+    <div style="font-size:52px; margin-bottom:14px;">🔍</div>
+    <h3>No Products Found</h3>
+    <p>We couldn't find any products matching your search or filter.</p>
+    <a href="/user/products" class="btn btn-primary btn-sm">Clear Filters</a>
+  </div>
+{% endif %}
+{% endblock %}

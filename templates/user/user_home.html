@@ -1,23 +1,150 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>User Dashboard</title>
-</head>	
-<body>
+{% extends "base.html" %}
+{% block title %}User Dashboard & Profile - SmartCart{% endblock %}
 
-<!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <p style="color:green;">{{ message }}</p>
-  {% endfor %}
-{% endwith %}
+{% block content %}
+<!-- User Profile Hero Banner -->
+<div class="profile-hero">
+  <div class="hero-avatar-area">
+    {% if user and user.profile_image %}
+      <img class="hero-avatar" src="{{ url_for('static', filename='uploads/user_profiles/' + user.profile_image) }}" alt="User Profile Photo">
+    {% else %}
+      <div class="hero-avatar-placeholder">{{ (user_name or 'U')[:1]|upper }}</div>
+    {% endif %}
+    <div class="hero-user-details">
+      <h1>Welcome back, {{ user_name }}!</h1>
+      <p>{{ (user and user.email) or session.get('user_email', '') }}</p>
+      <div class="hero-badges">
+        <span class="hero-badge">⭐ Customer Member</span>
+        {% if user and user.user_id %}
+          <span class="hero-badge">Customer ID: #{{ user.user_id }}</span>
+        {% endif %}
+        <span class="hero-badge">Status: Active</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-actions">
+    <a href="/user/profile" class="hero-btn">👤 Edit My Profile</a>
+    <a href="/user/products" class="btn btn-outline btn-sm" style="color:#fff !important; border-color:rgba(255,255,255,0.4); background:rgba(255,255,255,0.15)">🛍️ Shop Now</a>
+  </div>
+</div>
 
-<h2>Welcome, {{ user_name }}!</h2>
+<!-- User Activity Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">🛒</div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.cart_count|default(0) }}</div>
+      <div class="stat-label">Items in Cart</div>
+    </div>
+  </div>
 
-<a href="/user/products">Browse Products</a><br><br>\n<a href="/user/cart">View Cart</a><br><br> 
+  <div class="stat-card">
+    <div class="stat-icon">📦</div>
+    <div class="stat-info">
+      <div class="stat-number">{{ stats.order_count|default(0) }}</div>
+      <div class="stat-label">Total Orders Placed</div>
+    </div>
+  </div>
 
-<br><br>
-<a href="/user-logout">Logout</a>
+  <div class="stat-card">
+    <div class="stat-icon">💳</div>
+    <div class="stat-info">
+      <div class="stat-number">₹{{ "%.2f"|format(stats.total_spend|default(0)) }}</div>
+      <div class="stat-label">Lifetime Purchases</div>
+    </div>
+  </div>
+</div>
 
-</body>
-</html>
+<!-- Quick Shopping & Profile Navigation -->
+<h3 style="margin-bottom: 14px; font-size: 20px;">Quick Actions</h3>
+<div class="action-grid">
+  <a href="/user/products" class="action-card">
+    <div class="action-card-icon">🛍️</div>
+    <div class="action-card-text">
+      <h4>Browse Catalog</h4>
+      <p>Explore our curated products with categories and search</p>
+    </div>
+  </a>
+
+  <a href="/user/cart" class="action-card">
+    <div class="action-card-icon">🛒</div>
+    <div class="action-card-text">
+      <h4>My Shopping Cart</h4>
+      <p>Manage items, adjust quantities, and checkout</p>
+    </div>
+  </a>
+
+  <a href="/user/profile" class="action-card">
+    <div class="action-card-icon">👤</div>
+    <div class="action-card-text">
+      <h4>User Profile & History</h4>
+      <p>Update personal info, change avatar, and view invoices</p>
+    </div>
+  </a>
+
+  <a href="/user-logout" class="action-card">
+    <div class="action-card-icon">🚪</div>
+    <div class="action-card-text">
+      <h4>Sign Out</h4>
+      <p>Securely end your current shopping session</p>
+    </div>
+  </a>
+</div>
+
+<!-- Recent Orders & Invoices -->
+<div class="card" style="margin-top: 28px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h3 style="margin:0;">Recent Orders & Invoices</h3>
+      <p style="margin:0; font-size:13px;">View status and download automated PDF invoices</p>
+    </div>
+    <a href="/user/products" class="btn btn-light btn-sm">Start New Order →</a>
+  </div>
+
+  {% if recent_orders %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Order #</th>
+            <th>Date</th>
+            <th>Delivery City</th>
+            <th>Total Amount</th>
+            <th>Payment Status</th>
+            <th>Invoice</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in recent_orders %}
+            <tr>
+              <td><strong>#{{ o.order_id }}</strong></td>
+              <td style="color:var(--muted)">{{ o.created_at.strftime('%d %b %Y, %I:%M %p') if o.created_at else 'Recent' }}</td>
+              <td>{{ o.city or 'Standard Delivery' }}</td>
+              <td><strong style="color:var(--primary-dark)">₹{{ "%.2f"|format(o.amount) }}</strong></td>
+              <td>
+                {% if o.payment_status|lower == 'paid' %}
+                  <span class="badge badge-success">✓ Paid</span>
+                {% else %}
+                  <span class="badge badge-warning">{{ o.payment_status|capitalize }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('download_invoice', order_id=o.order_id) }}" class="btn btn-light btn-sm" title="Download Official PDF Invoice">
+                  📄 Invoice PDF
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align:center; padding:36px 16px;">
+      <div style="font-size:42px; margin-bottom:12px;">🛍️</div>
+      <h4 style="margin:0 0 6px;">You haven't placed any orders yet</h4>
+      <p style="margin-bottom:18px;">Discover our great collection of products and enjoy smooth checkout!</p>
+      <a href="/user/products" class="btn btn-primary">Start Shopping Now</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

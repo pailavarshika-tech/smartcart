@@ -1,34 +1,39 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>User Login</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}User Sign In - SmartCart{% endblock %}
 
-<h2>User Login</h2>
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-icon">👋</div>
+      <h2>Welcome Back</h2>
+      <p>Sign in to access your user profile, cart, and orders</p>
+    </div>
 
-<!-- Flash messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <p style="color:red;">{{ message }}</p>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+    <form method="POST" action="/user-login">
+      <div>
+        <label for="email">Email Address</label>
+        <input id="email" type="email" name="email" placeholder="name@example.com" required>
+      </div>
 
-<form method="POST" action="/user-login">
+      <div>
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="Enter your account password" required>
+      </div>
 
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
+      <button type="submit" style="width: 100%;" class="btn btn-primary btn-lg">
+        Sign In to Profile
+      </button>
+    </form>
 
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
-
-    <button type="submit">Login</button>
-</form>
-
-<br>
-<a href="/user-register">Create Account</a>
-
-</body>
-</html>
+    <div class="auth-footer">
+      <p style="margin-bottom:8px;">
+        Don't have a profile yet? <a href="/user-register">Create an account</a>
+      </p>
+      <p style="margin:0; font-size:12px;">
+        Store management? <a href="/admin-login" style="color:var(--muted)">Admin Portal 🔒</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

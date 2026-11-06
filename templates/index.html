@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}SmartCart - Welcome to Smart Purple Shopping{% endblock %}
+
+{% block content %}
+<!-- Landing Hero -->
+<div class="profile-hero" style="padding: 48px 36px; text-align: left;">
+  <div style="max-width: 680px; z-index: 1;">
+    <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.2); backdrop-filter:blur(10px); padding:6px 14px; border-radius:30px; font-size:13px; font-weight:700; margin-bottom:18px;">
+      <span>✨ Modern E-Commerce Platform</span>
+    </div>
+    <h1 style="font-size:38px; line-height:1.2; margin-bottom:14px; color:#fff;">
+      Smart Shopping with SmartCart
+    </h1>
+    <p style="font-size:16px; color:rgba(255,255,255,0.9); margin-bottom:28px;">
+      Experience seamless browsing, instant item selection, secure Razorpay checkout, and personal user & admin profiles with automatic PDF invoices.
+    </p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <a href="/user/products" class="hero-btn" style="font-size:15px; padding:12px 24px;">🛍️ Explore Products</a>
+      <a href="/user-register" class="btn btn-outline" style="color:#fff !important; border-color:rgba(255,255,255,0.4); background:rgba(255,255,255,0.15); font-size:15px; padding:12px 24px;">
+        ✨ Create User Profile
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Two Main Gateways: Customer & Admin Portals -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:24px; margin-bottom:40px;">
+  <!-- User Profile Gateway -->
+  <div class="card" style="border-top:4px solid var(--primary);">
+    <div style="width:48px; height:48px; background:var(--primary-light); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:14px;">
+      👤
+    </div>
+    <h3 style="margin:0 0 8px;">Customer Experience</h3>
+    <p style="font-size:14px; margin-bottom:20px;">
+      Create your user profile, upload an avatar, build your cart, place orders with test Razorpay payments, and download official PDF invoices anytime.
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/user-register" class="btn btn-primary btn-sm">Create Profile</a>
+      <a href="/user-login" class="btn btn-light btn-sm">User Sign In</a>
+    </div>
+  </div>
+
+  <!-- Admin Profile Gateway -->
+  <div class="card" style="border-top:4px solid var(--primary-dark);">
+    <div style="width:48px; height:48px; background:#faf5ff; color:var(--primary-dark); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:14px;">
+      🛡️
+    </div>
+    <h3 style="margin:0 0 8px;">Administrator Portal</h3>
+    <p style="font-size:14px; margin-bottom:20px;">
+      Open the admin dashboard to manage product inventory, upload catalog items, view revenue and orders, and customize your admin profile.
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="/admin-login" class="btn btn-outline btn-sm">Admin Portal Login</a>
+      <a href="/admin-signup" class="btn btn-light btn-sm">Register Admin (OTP)</a>
+    </div>
+  </div>
+</div>
+
+<!-- Features Overview -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">🛒</div>
+    <div class="stat-info">
+      <div class="stat-number" style="font-size:20px;">Smart Cart</div>
+      <div class="stat-label">Select specific items to purchase</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon">💳</div>
+    <div class="stat-info">
+      <div class="stat-number" style="font-size:20px;">Razorpay Checkout</div>
+      <div class="stat-label">Secure test payment processing</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon">📄</div>
+    <div class="stat-info">
+      <div class="stat-number" style="font-size:20px;">Automated Invoices</div>
+      <div class="stat-label">Instant PDF generation & history</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon">📱</div>
+    <div class="stat-info">
+      <div class="stat-number" style="font-size:20px;">Purple Responsive</div>
+      <div class="stat-label">Optimized for phones, tablets & desktops</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
