@@ -1,7 +1,11 @@
-﻿config.py
+config.py
 .env
 __pycache__/
 *.pyc
 venv/
 .venv/
 instance/
+*.db
+*.sqlite
+*.sqlite3
+smartcart.db
